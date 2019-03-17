@@ -22,11 +22,24 @@ use core::ptr::NonNull;
 #[cfg(feature = "use_spin")]
 use spin::Mutex;
 
-mod linked_list;
+pub mod linked_list;
 #[cfg(test)]
 mod test;
 
-/// A fixed size heap
+/// A heap that uses buddy system
+/// 
+/// # Usage
+/// 
+/// Create a heap and add a memory region to it:
+/// ```
+/// use buddy_system_allocator::*;
+/// let mut heap = Heap::new();
+/// # let begin: usize = 0;
+/// # let end: usize = 0;
+/// unsafe {
+///     heap.add_to_heap(begin, end);
+/// }
+/// ```
 pub struct Heap {
     // buddy system with max order of 32
     free_list: [linked_list::LinkedList; 32],
@@ -48,7 +61,7 @@ impl Heap {
         }
     }
 
-    /// Add a range of memory [start, end] to the heap
+    /// Add a range of memory [start, end) to the heap
     pub unsafe fn add_to_heap(&mut self, start: usize, end: usize) {
         assert!(start <= end);
 
@@ -169,13 +182,27 @@ unsafe impl Alloc for Heap {
     }
 }
 
+/// A locked version of `Heap`
+/// 
+/// # Usage
+/// 
+/// Create a locked heap and add a memory region to it:
+/// ```
+/// use buddy_system_allocator::*;
+/// let mut heap = LockedHeap::new();
+/// # let begin: usize = 0;
+/// # let end: usize = 0;
+/// unsafe {
+///     heap.add_to_heap(begin, end);
+/// }
+/// ```
 #[cfg(feature = "use_spin")]
 pub struct LockedHeap(Mutex<Heap>);
 
 #[cfg(feature = "use_spin")]
 impl LockedHeap {
     /// Creates an empty heap
-    pub const fn empty() -> LockedHeap {
+    pub const fn new() -> LockedHeap {
         LockedHeap(Mutex::new(Heap::new()))
     }
 
