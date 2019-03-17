@@ -5,7 +5,7 @@ buddy_system_allocator
 [![docs.rs][docs-img]][docs]
 
 
-A drop-in replacement for [phil-opp/linked-list-allocator](https://github.com/phil-opp/linked-list-allocator). But it uses buddy system instead.
+An (almost) drop-in replacement for [phil-opp/linked-list-allocator](https://github.com/phil-opp/linked-list-allocator). But it uses buddy system instead.
 
 
 ## Usage
