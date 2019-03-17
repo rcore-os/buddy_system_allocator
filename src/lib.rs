@@ -206,7 +206,7 @@ impl LockedHeap {
         LockedHeap(Mutex::new(Heap::new()))
     }
 
-    /// Add a memory region to the heap
+    /// Add a memory region [start, end) to the heap
     pub fn add_to_heap(&mut self, start: usize, end: usize) {
         unsafe {
             self.0.lock().add_to_heap(start, end);
