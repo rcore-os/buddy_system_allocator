@@ -1,5 +1,10 @@
 [package]
 name = "buddy_system_allocator"
+description = "A bare metal allocator that uses buddy system."
+documentations = "https://docs.rs/buddy_system_allocator"
+homepage = "https://github.com/rcore-os/buddy_system_allocator"
+repository = "https://github.com/rcore-os/buddy_system_allocator"
+keywords = ["allocator", "no_std", "heap"]
 version = "0.1.0"
 authors = ["Jiajie Chen <noc@jiegec.ac.cn>"]
 edition = "2018"
