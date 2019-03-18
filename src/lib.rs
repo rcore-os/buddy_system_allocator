@@ -33,10 +33,12 @@ mod test;
 /// Create a heap and add a memory region to it:
 /// ```
 /// use buddy_system_allocator::*;
-/// let mut heap = Heap::new();
+/// let mut heap = Heap::empty();
 /// # let begin: usize = 0;
 /// # let end: usize = 0;
 /// unsafe {
+///     heap.init(begin, size);
+///     // or
 ///     heap.add_to_heap(begin, end);
 /// }
 /// ```
@@ -206,10 +208,22 @@ impl LockedHeap {
         LockedHeap(Mutex::new(Heap::new()))
     }
 
+    /// Creates an empty heap
+    pub const fn empty() -> LockedHeap {
+        LockedHeap(Mutex::new(Heap::new()))
+    }
+
     /// Add a memory region [start, end) to the heap
     pub fn add_to_heap(&mut self, start: usize, end: usize) {
         unsafe {
             self.0.lock().add_to_heap(start, end);
+        }
+    }
+
+    /// Add a memory region [start, start+size) to the heap
+    pub fn init(&mut self, start: usize, size: usize) {
+        unsafe {
+            self.0.lock().add_to_heap(start, start + size);
         }
     }
 }

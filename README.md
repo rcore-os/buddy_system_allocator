@@ -23,7 +23,9 @@ To init the allocator:
 
 ```rust
 unsafe {
-    HEAP_ALLOCATOR.lock().init(heap_start, heap_end);
+    HEAP_ALLOCATOR.lock().init(heap_start, heap_size);
+    // or
+    HEAP_ALLOCATOR.lock().add_to_heap(heap_start, heap_end);
 }
 ```
 
