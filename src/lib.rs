@@ -36,6 +36,7 @@ mod test;
 /// let mut heap = Heap::empty();
 /// # let begin: usize = 0;
 /// # let end: usize = 0;
+/// # let size: usize = 0;
 /// unsafe {
 ///     heap.init(begin, size);
 ///     // or
@@ -63,6 +64,11 @@ impl Heap {
         }
     }
 
+    /// Create an empty heap
+    pub const fn empty() -> Self {
+        Self::new()
+    }
+
     /// Add a range of memory [start, end) to the heap
     pub unsafe fn add_to_heap(&mut self, start: usize, end: usize) {
         assert!(start <= end);
@@ -80,6 +86,11 @@ impl Heap {
         }
 
         self.total += total;
+    }
+   
+    /// Add a range of memory [start, end) to the heap
+    pub unsafe fn init(&mut self, start: usize, size: usize) {
+        self.add_to_heap(start, start + size);
     }
 
     /// Alloc a range of memory from the heap satifying `layout` requirements
@@ -194,8 +205,11 @@ unsafe impl Alloc for Heap {
 /// let mut heap = LockedHeap::new();
 /// # let begin: usize = 0;
 /// # let end: usize = 0;
+/// # let size: usize = 0;
 /// unsafe {
-///     heap.add_to_heap(begin, end);
+///     heap.lock().init(begin, size);
+///     // or
+///     heap.lock().add_to_heap(begin, end);
 /// }
 /// ```
 #[cfg(feature = "use_spin")]
@@ -211,20 +225,6 @@ impl LockedHeap {
     /// Creates an empty heap
     pub const fn empty() -> LockedHeap {
         LockedHeap(Mutex::new(Heap::new()))
-    }
-
-    /// Add a memory region [start, end) to the heap
-    pub fn add_to_heap(&mut self, start: usize, end: usize) {
-        unsafe {
-            self.0.lock().add_to_heap(start, end);
-        }
-    }
-
-    /// Add a memory region [start, start+size) to the heap
-    pub fn init(&mut self, start: usize, size: usize) {
-        unsafe {
-            self.0.lock().add_to_heap(start, start + size);
-        }
     }
 }
 
