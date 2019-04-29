@@ -33,10 +33,12 @@ mod test;
 /// Create a heap and add a memory region to it:
 /// ```
 /// use buddy_system_allocator::*;
+/// # use core::mem::size_of;
 /// let mut heap = Heap::empty();
-/// # let begin: usize = 0;
-/// # let end: usize = 0;
-/// # let size: usize = 0;
+/// # let space: [usize; 100] = [0; 100];
+/// # let begin: usize = space.as_ptr() as usize;
+/// # let end: usize = begin + 100 * size_of::<usize>();
+/// # let size: usize = 100 * size_of::<usize>();
 /// unsafe {
 ///     heap.init(begin, size);
 ///     // or
@@ -70,7 +72,10 @@ impl Heap {
     }
 
     /// Add a range of memory [start, end) to the heap
-    pub unsafe fn add_to_heap(&mut self, start: usize, end: usize) {
+    pub unsafe fn add_to_heap(&mut self, mut start: usize, mut end: usize) {
+        // avoid unaligned access on some platforms
+        start = (start + size_of::<usize>() - 1) & (!size_of::<usize>());
+        end = end & (!size_of::<usize>());
         assert!(start <= end);
 
         let mut total = 0;
@@ -202,10 +207,12 @@ unsafe impl Alloc for Heap {
 /// Create a locked heap and add a memory region to it:
 /// ```
 /// use buddy_system_allocator::*;
+/// # use core::mem::size_of;
 /// let mut heap = LockedHeap::new();
-/// # let begin: usize = 0;
-/// # let end: usize = 0;
-/// # let size: usize = 0;
+/// # let space: [usize; 100] = [0; 100];
+/// # let begin: usize = space.as_ptr() as usize;
+/// # let end: usize = begin + 100 * size_of::<usize>();
+/// # let size: usize = 100 * size_of::<usize>();
 /// unsafe {
 ///     heap.lock().init(begin, size);
 ///     // or
