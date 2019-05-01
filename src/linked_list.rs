@@ -4,10 +4,10 @@
 use core::{fmt, ptr};
 
 /// An intrusive linked list
-/// 
+///
 /// A clean room implementation of the one used in CS140e 2018 Winter
-/// 
-/// Thanks Sergio Benitez for his excellent work, 
+///
+/// Thanks Sergio Benitez for his excellent work,
 /// See [CS140e](https://cs140e.sergio.bz/) for more information
 #[derive(Copy, Clone)]
 pub struct LinkedList {

@@ -1,4 +1,5 @@
 use crate::linked_list;
+use crate::FrameAllocator;
 use crate::Heap;
 use core::alloc::Layout;
 use core::mem::size_of;
@@ -65,7 +66,9 @@ fn test_heap_oom() {
         heap.add_to_heap(space.as_ptr() as usize, space.as_ptr().add(100) as usize);
     }
 
-    assert!(heap.alloc(Layout::from_size_align(100 * size_of::<usize>(), 1).unwrap()).is_err());
+    assert!(heap
+        .alloc(Layout::from_size_align(100 * size_of::<usize>(), 1).unwrap())
+        .is_err());
     assert!(heap.alloc(Layout::from_size_align(1, 1).unwrap()).is_ok());
 }
 
@@ -81,5 +84,37 @@ fn test_heap_alloc_and_free() {
     for _ in 0..100 {
         let addr = heap.alloc(Layout::from_size_align(1, 1).unwrap()).unwrap();
         heap.dealloc(addr, Layout::from_size_align(1, 1).unwrap());
+    }
+}
+
+#[test]
+fn test_empty_frame_allocator() {
+    let mut frame = FrameAllocator::new();
+    assert!(frame.alloc(1).is_none());
+}
+
+#[test]
+fn test_frame_allocator_add() {
+    let mut frame = FrameAllocator::new();
+    assert!(frame.alloc(1).is_none());
+
+    frame.add_frame(0, 3);
+    let num = frame.alloc(1);
+    assert_eq!(num, Some(2));
+    let num = frame.alloc(2);
+    assert_eq!(num, Some(0));
+    assert!(frame.alloc(1).is_none());
+    assert!(frame.alloc(2).is_none());
+}
+
+#[test]
+fn test_frame_allocator_alloc_and_free() {
+    let mut frame = FrameAllocator::new();
+    assert!(frame.alloc(1).is_none());
+
+    frame.add_frame(0, 1024);
+    for _ in 0..100 {
+        let addr = frame.alloc(512).unwrap();
+        frame.dealloc(addr, 512);
     }
 }

@@ -22,14 +22,17 @@ use core::ptr::NonNull;
 #[cfg(feature = "use_spin")]
 use spin::Mutex;
 
+mod frame;
 pub mod linked_list;
 #[cfg(test)]
 mod test;
 
+pub use frame::*;
+
 /// A heap that uses buddy system
-/// 
+///
 /// # Usage
-/// 
+///
 /// Create a heap and add a memory region to it:
 /// ```
 /// use buddy_system_allocator::*;
@@ -92,7 +95,7 @@ impl Heap {
 
         self.total += total;
     }
-   
+
     /// Add a range of memory [start, end) to the heap
     pub unsafe fn init(&mut self, start: usize, size: usize) {
         self.add_to_heap(start, start + size);
@@ -112,7 +115,8 @@ impl Heap {
                 for j in (class + 1..i + 1).rev() {
                     if let Some(block) = self.free_list[j].pop() {
                         unsafe {
-                            self.free_list[j - 1].push((block as usize + (1 << (j - 1))) as *mut usize);
+                            self.free_list[j - 1]
+                                .push((block as usize + (1 << (j - 1))) as *mut usize);
                             self.free_list[j - 1].push(block);
                         }
                     } else {
@@ -120,10 +124,12 @@ impl Heap {
                     }
                 }
 
-                let result = NonNull::new(self.free_list[class]
-                    .pop()
-                    .expect("current block should have free space now")
-                    as *mut u8);
+                let result = NonNull::new(
+                    self.free_list[class]
+                        .pop()
+                        .expect("current block should have free space now")
+                        as *mut u8,
+                );
                 if let Some(result) = result {
                     self.user += layout.size();
                     self.allocated += size;
@@ -189,7 +195,6 @@ impl fmt::Debug for Heap {
     }
 }
 
-
 unsafe impl Alloc for Heap {
     unsafe fn alloc(&mut self, layout: Layout) -> Result<NonNull<u8>, AllocErr> {
         self.alloc(layout)
@@ -201,9 +206,9 @@ unsafe impl Alloc for Heap {
 }
 
 /// A locked version of `Heap`
-/// 
+///
 /// # Usage
-/// 
+///
 /// Create a locked heap and add a memory region to it:
 /// ```
 /// use buddy_system_allocator::*;
@@ -255,12 +260,10 @@ unsafe impl GlobalAlloc for LockedHeap {
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
-        self.0
-            .lock()
-            .dealloc(NonNull::new_unchecked(ptr), layout)
+        self.0.lock().dealloc(NonNull::new_unchecked(ptr), layout)
     }
 }
 
-fn prev_power_of_two(num: usize) -> usize {
+pub(crate) fn prev_power_of_two(num: usize) -> usize {
     1 << (8 * (size_of::<usize>()) - num.leading_zeros() as usize - 1)
 }
