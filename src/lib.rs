@@ -12,7 +12,6 @@ extern crate spin;
 extern crate alloc;
 
 use alloc::alloc::{Alloc, AllocErr, Layout};
-use alloc::boxed::Box;
 use core::alloc::GlobalAlloc;
 use core::cmp::{max, min};
 use core::fmt;
@@ -272,20 +271,20 @@ unsafe impl GlobalAlloc for LockedHeap {
 /// Create a locked heap:
 /// ```
 /// use buddy_system_allocator::*;
-/// let heap = LockedHeapWithRescue::new(Box::new(|heap: &mut Heap| {}));
+/// let heap = LockedHeapWithRescue::new(&|heap: &mut Heap| {});
 /// ```
 /// 
 /// Before oom, the allocator will try to call rescue function and try for one more time.
 #[cfg(feature = "use_spin")]
 pub struct LockedHeapWithRescue {
     inner: Mutex<Heap>,
-    rescue: Box<Fn(&mut Heap)>,
+    rescue: &'static Fn(&mut Heap)
 }
 
 #[cfg(feature = "use_spin")]
 impl LockedHeapWithRescue {
     /// Creates an empty heap
-    pub const fn new(rescue: Box<Fn(&mut Heap)>) -> LockedHeapWithRescue {
+    pub const fn new(rescue: &'static Fn(&mut Heap)) -> LockedHeapWithRescue {
         LockedHeapWithRescue {
             inner: Mutex::new(Heap::new()),
             rescue,
