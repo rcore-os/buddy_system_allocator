@@ -29,6 +29,8 @@ unsafe {
 }
 ```
 
+You can also use `FrameAllocator` and `LockedHeapWithRescue`, see their documentation for usage.
+
 ## License
 
 Some code comes from phil-opp's linked-list-allocator.

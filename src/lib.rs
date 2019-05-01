@@ -12,6 +12,7 @@ extern crate spin;
 extern crate alloc;
 
 use alloc::alloc::{Alloc, AllocErr, Layout};
+use alloc::boxed::Box;
 use core::alloc::GlobalAlloc;
 use core::cmp::{max, min};
 use core::fmt;
@@ -261,6 +262,66 @@ unsafe impl GlobalAlloc for LockedHeap {
 
     unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
         self.0.lock().dealloc(NonNull::new_unchecked(ptr), layout)
+    }
+}
+
+/// A locked version of `Heap` with rescue before oom
+///
+/// # Usage
+///
+/// Create a locked heap:
+/// ```
+/// use buddy_system_allocator::*;
+/// let heap = LockedHeapWithRescue::new(Box::new(|heap: &mut Heap| {}));
+/// ```
+/// 
+/// Before oom, the allocator will try to call rescue function and try for one more time.
+#[cfg(feature = "use_spin")]
+pub struct LockedHeapWithRescue {
+    inner: Mutex<Heap>,
+    rescue: Box<Fn(&mut Heap)>,
+}
+
+#[cfg(feature = "use_spin")]
+impl LockedHeapWithRescue {
+    /// Creates an empty heap
+    pub const fn new(rescue: Box<Fn(&mut Heap)>) -> LockedHeapWithRescue {
+        LockedHeapWithRescue {
+            inner: Mutex::new(Heap::new()),
+            rescue,
+        }
+    }
+}
+
+#[cfg(feature = "use_spin")]
+impl Deref for LockedHeapWithRescue {
+    type Target = Mutex<Heap>;
+
+    fn deref(&self) -> &Mutex<Heap> {
+        &self.inner
+    }
+}
+
+#[cfg(feature = "use_spin")]
+unsafe impl GlobalAlloc for LockedHeapWithRescue {
+    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+        let mut inner = self.inner.lock();
+        match inner.alloc(layout) {
+            Ok(allocation) => allocation.as_ptr(),
+            Err(_) => {
+                (self.rescue)(&mut inner);
+                inner
+                    .alloc(layout)
+                    .ok()
+                    .map_or(0 as *mut u8, |allocation| allocation.as_ptr())
+            }
+        }
+    }
+
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+        self.inner
+            .lock()
+            .dealloc(NonNull::new_unchecked(ptr), layout)
     }
 }
 
