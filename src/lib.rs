@@ -270,6 +270,15 @@ pub struct LockedHeapWithRescueInner {
     rescue: &'static Fn(&mut Heap)
 }
 
+#[cfg(feature = "use_spin")]
+impl Deref for LockedHeapWithRescueInner {
+    type Target = Heap;
+
+    fn deref(&self) -> &Heap {
+        &self.heap
+    }
+}
+
 /// A locked version of `Heap` with rescue before oom
 ///
 /// # Usage
@@ -296,6 +305,15 @@ impl LockedHeapWithRescue {
                 rescue
             })
         }
+    }
+}
+
+#[cfg(feature = "use_spin")]
+impl Deref for LockedHeapWithRescue {
+    type Target = Mutex<LockedHeapWithRescueInner>;
+
+    fn deref(&self) -> &Mutex<LockedHeapWithRescueInner> {
+        &self.inner
     }
 }
 
