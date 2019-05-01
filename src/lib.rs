@@ -264,6 +264,12 @@ unsafe impl GlobalAlloc for LockedHeap {
     }
 }
 
+#[cfg(feature = "use_spin")]
+pub struct LockedHeapWithRescueInner {
+    heap: Heap,
+    rescue: &'static Fn(&mut Heap)
+}
+
 /// A locked version of `Heap` with rescue before oom
 ///
 /// # Usage
@@ -277,8 +283,7 @@ unsafe impl GlobalAlloc for LockedHeap {
 /// Before oom, the allocator will try to call rescue function and try for one more time.
 #[cfg(feature = "use_spin")]
 pub struct LockedHeapWithRescue {
-    inner: Mutex<Heap>,
-    rescue: &'static Fn(&mut Heap)
+    inner: Mutex<LockedHeapWithRescueInner>,
 }
 
 #[cfg(feature = "use_spin")]
@@ -286,18 +291,11 @@ impl LockedHeapWithRescue {
     /// Creates an empty heap
     pub const fn new(rescue: &'static Fn(&mut Heap)) -> LockedHeapWithRescue {
         LockedHeapWithRescue {
-            inner: Mutex::new(Heap::new()),
-            rescue,
+            inner: Mutex::new(LockedHeapWithRescueInner {
+                heap: Heap::new(),
+                rescue
+            })
         }
-    }
-}
-
-#[cfg(feature = "use_spin")]
-impl Deref for LockedHeapWithRescue {
-    type Target = Mutex<Heap>;
-
-    fn deref(&self) -> &Mutex<Heap> {
-        &self.inner
     }
 }
 
@@ -305,11 +303,11 @@ impl Deref for LockedHeapWithRescue {
 unsafe impl GlobalAlloc for LockedHeapWithRescue {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         let mut inner = self.inner.lock();
-        match inner.alloc(layout) {
+        match inner.heap.alloc(layout) {
             Ok(allocation) => allocation.as_ptr(),
             Err(_) => {
-                (self.rescue)(&mut inner);
-                inner
+                (inner.rescue)(&mut inner.heap);
+                inner.heap
                     .alloc(layout)
                     .ok()
                     .map_or(0 as *mut u8, |allocation| allocation.as_ptr())
@@ -320,6 +318,7 @@ unsafe impl GlobalAlloc for LockedHeapWithRescue {
     unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
         self.inner
             .lock()
+            .heap
             .dealloc(NonNull::new_unchecked(ptr), layout)
     }
 }
