@@ -98,7 +98,7 @@ fn test_frame_allocator_add() {
     let mut frame = FrameAllocator::new();
     assert!(frame.alloc(1).is_none());
 
-    frame.add_frame(0, 3);
+    frame.insert(0..3);
     let num = frame.alloc(1);
     assert_eq!(num, Some(2));
     let num = frame.alloc(2);

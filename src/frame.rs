@@ -1,6 +1,7 @@
 use super::prev_power_of_two;
 use alloc::collections::BTreeSet;
 use core::cmp::min;
+use core::ops::Range;
 
 #[cfg(feature = "use_spin")]
 use core::ops::Deref;
@@ -64,6 +65,11 @@ impl FrameAllocator {
         }
 
         self.total += total;
+    }
+
+    /// Add a range of frame to the allocator
+    pub fn insert(&mut self, range: Range<usize>) {
+        self.add_frame(range.start, range.end);
     }
 
     /// Alloc a range of frames from the allocator, return the first frame of the allocated range
