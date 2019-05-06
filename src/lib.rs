@@ -77,8 +77,8 @@ impl Heap {
     /// Add a range of memory [start, end) to the heap
     pub unsafe fn add_to_heap(&mut self, mut start: usize, mut end: usize) {
         // avoid unaligned access on some platforms
-        start = (start + size_of::<usize>() - 1) & (!size_of::<usize>());
-        end = end & (!size_of::<usize>());
+        start = (start + size_of::<usize>() - 1) & (!size_of::<usize>() + 1);
+        end = end & (!size_of::<usize>() + 1);
         assert!(start <= end);
 
         let mut total = 0;
@@ -273,7 +273,7 @@ use alloc::boxed::Box;
 /// Create a locked heap:
 /// ```
 /// use buddy_system_allocator::*;
-/// let heap = LockedHeapWithRescue::new(&|heap: &mut Heap| {});
+/// let heap = LockedHeapWithRescue::new(|heap: &mut Heap| {});
 /// ```
 ///
 /// Before oom, the allocator will try to call rescue function and try for one more time.
