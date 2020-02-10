@@ -17,3 +17,6 @@ use_spin = ["spin"]
 [dependencies.spin]
 version = "0.5"
 optional = true
+
+[dependencies]
+rustversion = "1.0"

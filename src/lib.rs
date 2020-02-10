@@ -1,6 +1,7 @@
 #![feature(const_fn)]
 #![feature(alloc, allocator_api)]
 #![no_std]
+#![allow(stable_features)]
 
 #[cfg(test)]
 #[macro_use]
@@ -11,7 +12,11 @@ extern crate spin;
 
 extern crate alloc;
 
-use alloc::alloc::{Alloc, AllocErr, Layout};
+#[rustversion::before(2020-02-02)]
+use alloc::alloc::Alloc;
+#[rustversion::since(2020-02-02)]
+use alloc::alloc::AllocRef as Alloc;
+use alloc::alloc::{AllocErr, Layout};
 use core::alloc::GlobalAlloc;
 use core::cmp::{max, min};
 use core::fmt;
@@ -263,8 +268,6 @@ unsafe impl GlobalAlloc for LockedHeap {
         self.0.lock().dealloc(NonNull::new_unchecked(ptr), layout)
     }
 }
-
-use alloc::boxed::Box;
 
 /// A locked version of `Heap` with rescue before oom
 ///
