@@ -1,12 +1,9 @@
-buddy_system_allocator
-=================================
+# buddy_system_allocator
 
 [![Crates.io version][crate-img]][crate]
 [![docs.rs][docs-img]][docs]
 
-
 An (almost) drop-in replacement for [phil-opp/linked-list-allocator](https://github.com/phil-opp/linked-list-allocator). But it uses buddy system instead.
-
 
 ## Usage
 
@@ -41,4 +38,3 @@ Licensed under MIT License. Thanks phill-opp's linked-list-allocator for inspira
 [crate]:         https://crates.io/crates/buddy_system_allocator
 [docs-img]:      https://docs.rs/buddy_system_allocator/badge.svg
 [docs]:          https://docs.rs/buddy_system_allocator
-
