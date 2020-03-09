@@ -13,6 +13,32 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Use nightly-2020-02-01
+      run: rustup default nightly-2020-02-01
+    - name: Build
+      run: cargo build --verbose
+    - name: Run tests
+      run: cargo test --verbose
+    - name: Use nightly-2020-02-02
+      run: rustup default nightly-2020-02-02
+    - name: Build
+      run: cargo build --verbose
+    - name: Run tests
+      run: cargo test --verbose
+    - name: Use nightly-2020-02-03
+      run: rustup default nightly-2020-02-03
+    - name: Build
+      run: cargo build --verbose
+    - name: Run tests
+      run: cargo test --verbose
+    - name: Use nightly-2020-03-01
+      run: rustup default nightly-2020-03-01
+    - name: Build
+      run: cargo build --verbose
+    - name: Run tests
+      run: cargo test --verbose
+    - name: Use nightly-2020-03-02
+      run: rustup default nightly-2020-03-02
     - name: Build
       run: cargo build --verbose
     - name: Run tests
