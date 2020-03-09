@@ -201,8 +201,14 @@ impl fmt::Debug for Heap {
 }
 
 unsafe impl Alloc for Heap {
+    #[rustversion::before(2020-03-03)]
     unsafe fn alloc(&mut self, layout: Layout) -> Result<NonNull<u8>, AllocErr> {
         self.alloc(layout)
+    }
+
+    #[rustversion::since(2020-03-03)]
+    unsafe fn alloc(&mut self, layout: Layout) -> Result<(NonNull<u8>, usize), AllocErr> {
+        self.alloc(layout).map(|p| (p, layout.size()))
     }
 
     unsafe fn dealloc(&mut self, ptr: NonNull<u8>, layout: Layout) {
