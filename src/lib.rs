@@ -15,7 +15,7 @@ extern crate alloc;
 #[rustversion::before(2020-02-02)]
 use alloc::alloc::Alloc;
 #[rustversion::since(2020-02-02)]
-use alloc::alloc::AllocRef as Alloc;
+use alloc::alloc::AllocRef;
 use alloc::alloc::{AllocErr, Layout};
 use core::alloc::GlobalAlloc;
 use core::cmp::{max, min};
@@ -200,14 +200,31 @@ impl fmt::Debug for Heap {
     }
 }
 
+#[rustversion::before(2020-02-02)]
 unsafe impl Alloc for Heap {
+    unsafe fn alloc(&mut self, layout: Layout) -> Result<NonNull<u8>, AllocErr> {
+        self.alloc(layout)
+    }
+
+    unsafe fn dealloc(&mut self, ptr: NonNull<u8>, layout: Layout) {
+        self.dealloc(ptr, layout)
+    }
+}
+
+#[rustversion::since(2020-02-02)]
+unsafe impl AllocRef for Heap {
     #[rustversion::before(2020-03-03)]
     unsafe fn alloc(&mut self, layout: Layout) -> Result<NonNull<u8>, AllocErr> {
         self.alloc(layout)
     }
 
-    #[rustversion::since(2020-03-03)]
+    #[rustversion::all(since(2020-03-03), before(2020-03-08))]
     unsafe fn alloc(&mut self, layout: Layout) -> Result<(NonNull<u8>, usize), AllocErr> {
+        self.alloc(layout).map(|p| (p, layout.size()))
+    }
+
+    #[rustversion::since(2020-03-08)]
+    fn alloc(&mut self, layout: Layout) -> Result<(NonNull<u8>, usize), AllocErr> {
         self.alloc(layout).map(|p| (p, layout.size()))
     }
 
