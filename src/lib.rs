@@ -218,12 +218,12 @@ unsafe impl AllocRef for Heap {
         self.alloc(layout)
     }
 
-    #[rustversion::all(since(2020-03-03), before(2020-03-08))]
+    #[rustversion::all(since(2020-03-03), before(2020-03-10))]
     unsafe fn alloc(&mut self, layout: Layout) -> Result<(NonNull<u8>, usize), AllocErr> {
         self.alloc(layout).map(|p| (p, layout.size()))
     }
 
-    #[rustversion::since(2020-03-08)]
+    #[rustversion::since(2020-03-10)]
     fn alloc(&mut self, layout: Layout) -> Result<(NonNull<u8>, usize), AllocErr> {
         self.alloc(layout).map(|p| (p, layout.size()))
     }
