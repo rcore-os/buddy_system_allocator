@@ -17,6 +17,8 @@ use alloc::alloc::Alloc;
 #[rustversion::since(2020-02-02)]
 use alloc::alloc::AllocRef;
 use alloc::alloc::{AllocErr, Layout};
+#[rustversion::since(2020-04-02)]
+use alloc::alloc::{AllocInit, MemoryBlock};
 use core::alloc::GlobalAlloc;
 use core::cmp::{max, min};
 use core::fmt;
@@ -223,9 +225,23 @@ unsafe impl AllocRef for Heap {
         self.alloc(layout).map(|p| (p, layout.size()))
     }
 
-    #[rustversion::since(2020-03-10)]
+    #[rustversion::all(since(2020-03-10), before(2020-04-02))]
     fn alloc(&mut self, layout: Layout) -> Result<(NonNull<u8>, usize), AllocErr> {
         self.alloc(layout).map(|p| (p, layout.size()))
+    }
+
+    #[rustversion::since(2020-04-02)]
+    fn alloc(&mut self, layout: Layout, init: AllocInit) -> Result<MemoryBlock, AllocErr> {
+        self.alloc(layout).map(|p| {
+            let block = MemoryBlock {
+                ptr: p,
+                size: layout.size(),
+            };
+            unsafe {
+                init.init(block);
+            }
+            block
+        })
     }
 
     unsafe fn dealloc(&mut self, ptr: NonNull<u8>, layout: Layout) {
