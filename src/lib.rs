@@ -190,6 +190,21 @@ impl Heap {
         self.user -= layout.size();
         self.allocated -= size;
     }
+
+    /// Return the number of bytes that user requests
+    pub fn stats_alloc_user(&self) -> usize {
+        self.user
+    }
+
+    /// Return the number of bytes that are actually allocated
+    pub fn stats_alloc_actual(&self) -> usize {
+        self.allocated
+    }
+
+    /// Return the total number of bytes in the heap
+    pub fn stats_total_bytes(&self) -> usize {
+        self.total
+    }
 }
 
 impl fmt::Debug for Heap {
