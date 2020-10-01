@@ -1,7 +1,5 @@
-#![feature(const_fn)]
-#![feature(alloc, allocator_api)]
+#![cfg_attr(feature = "const_fn", feature(const_mut_refs, const_fn_fn_ptr_basics))]
 #![no_std]
-#![allow(stable_features)]
 
 #[cfg(test)]
 #[macro_use]
@@ -12,14 +10,7 @@ extern crate spin;
 
 extern crate alloc;
 
-#[rustversion::before(2020-02-02)]
-use alloc::alloc::Alloc;
-#[rustversion::since(2020-02-02)]
-use alloc::alloc::AllocRef;
-use alloc::alloc::{AllocErr, Layout};
-#[rustversion::since(2020-04-02)]
-use alloc::alloc::{AllocInit, MemoryBlock};
-use core::alloc::GlobalAlloc;
+use core::alloc::{GlobalAlloc, Layout};
 use core::cmp::{max, min};
 use core::fmt;
 use core::mem::size_of;
@@ -109,7 +100,7 @@ impl Heap {
     }
 
     /// Alloc a range of memory from the heap satifying `layout` requirements
-    pub fn alloc(&mut self, layout: Layout) -> Result<NonNull<u8>, AllocErr> {
+    pub fn alloc(&mut self, layout: Layout) -> Result<NonNull<u8>, ()> {
         let size = max(
             layout.size().next_power_of_two(),
             max(layout.align(), size_of::<usize>()),
@@ -127,7 +118,7 @@ impl Heap {
                             self.free_list[j - 1].push(block);
                         }
                     } else {
-                        return Err(AllocErr {});
+                        return Err(());
                     }
                 }
 
@@ -142,11 +133,11 @@ impl Heap {
                     self.allocated += size;
                     return Ok(result);
                 } else {
-                    return Err(AllocErr {});
+                    return Err(());
                 }
             }
         }
-        Err(AllocErr {})
+        Err(())
     }
 
     /// Dealloc a range of memory from the heap
@@ -214,53 +205,6 @@ impl fmt::Debug for Heap {
             .field("allocated", &self.allocated)
             .field("total", &self.total)
             .finish()
-    }
-}
-
-#[rustversion::before(2020-02-02)]
-unsafe impl Alloc for Heap {
-    unsafe fn alloc(&mut self, layout: Layout) -> Result<NonNull<u8>, AllocErr> {
-        self.alloc(layout)
-    }
-
-    unsafe fn dealloc(&mut self, ptr: NonNull<u8>, layout: Layout) {
-        self.dealloc(ptr, layout)
-    }
-}
-
-#[rustversion::since(2020-02-02)]
-unsafe impl AllocRef for Heap {
-    #[rustversion::before(2020-03-03)]
-    unsafe fn alloc(&mut self, layout: Layout) -> Result<NonNull<u8>, AllocErr> {
-        self.alloc(layout)
-    }
-
-    #[rustversion::all(since(2020-03-03), before(2020-03-10))]
-    unsafe fn alloc(&mut self, layout: Layout) -> Result<(NonNull<u8>, usize), AllocErr> {
-        self.alloc(layout).map(|p| (p, layout.size()))
-    }
-
-    #[rustversion::all(since(2020-03-10), before(2020-04-02))]
-    fn alloc(&mut self, layout: Layout) -> Result<(NonNull<u8>, usize), AllocErr> {
-        self.alloc(layout).map(|p| (p, layout.size()))
-    }
-
-    #[rustversion::since(2020-04-02)]
-    fn alloc(&mut self, layout: Layout, init: AllocInit) -> Result<MemoryBlock, AllocErr> {
-        self.alloc(layout).map(|p| {
-            let block = MemoryBlock {
-                ptr: p,
-                size: layout.size(),
-            };
-            unsafe {
-                init.init(block);
-            }
-            block
-        })
-    }
-
-    unsafe fn dealloc(&mut self, ptr: NonNull<u8>, layout: Layout) {
-        self.dealloc(ptr, layout)
     }
 }
 
@@ -343,7 +287,17 @@ pub struct LockedHeapWithRescue {
 #[cfg(feature = "use_spin")]
 impl LockedHeapWithRescue {
     /// Creates an empty heap
+    #[cfg(feature = "const_fn")]
     pub const fn new(rescue: fn(&mut Heap)) -> LockedHeapWithRescue {
+        LockedHeapWithRescue {
+            inner: Mutex::new(Heap::new()),
+            rescue,
+        }
+    }
+
+    /// Creates an empty heap
+    #[cfg(not(feature = "const_fn"))]
+    pub fn new(rescue: fn(&mut Heap)) -> LockedHeapWithRescue {
         LockedHeapWithRescue {
             inner: Mutex::new(Heap::new()),
             rescue,

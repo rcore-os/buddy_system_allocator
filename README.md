@@ -28,6 +28,13 @@ unsafe {
 
 You can also use `FrameAllocator` and `LockedHeapWithRescue`, see their documentation for usage.
 
+## Features
+
+- **`use_spin`** (default): Provide a `LockedHeap` type that implements the [`GlobalAlloc`] trait by using a spinlock.
+- **`const_fn`** (nightly only): Provide const fn version of `LockedHeapWithRescue::new`.
+
+[`GlobalAlloc`]: https://doc.rust-lang.org/nightly/core/alloc/trait.GlobalAlloc.html
+
 ## License
 
 Some code comes from phil-opp's linked-list-allocator.
