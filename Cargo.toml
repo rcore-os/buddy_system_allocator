@@ -13,6 +13,7 @@ license = "MIT"
 [features]
 default = ["use_spin"]
 use_spin = ["spin"]
+const_fn = []
 
 [dependencies.spin]
 version = "0.5"

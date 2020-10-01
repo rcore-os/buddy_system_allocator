@@ -1,4 +1,4 @@
-#![feature(const_mut_refs, const_fn_fn_ptr_basics)]
+#![cfg_attr(feature = "const_fn", feature(const_mut_refs, const_fn_fn_ptr_basics))]
 #![no_std]
 
 #[cfg(test)]
@@ -287,7 +287,17 @@ pub struct LockedHeapWithRescue {
 #[cfg(feature = "use_spin")]
 impl LockedHeapWithRescue {
     /// Creates an empty heap
+    #[cfg(feature = "const_fn")]
     pub const fn new(rescue: fn(&mut Heap)) -> LockedHeapWithRescue {
+        LockedHeapWithRescue {
+            inner: Mutex::new(Heap::new()),
+            rescue,
+        }
+    }
+
+    /// Creates an empty heap
+    #[cfg(not(feature = "const_fn"))]
+    pub fn new(rescue: fn(&mut Heap)) -> LockedHeapWithRescue {
         LockedHeapWithRescue {
             inner: Mutex::new(Heap::new()),
             rescue,

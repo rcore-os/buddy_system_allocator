@@ -13,6 +13,7 @@ jobs:
     strategy:
       matrix:
         rust: 
+        - stable
         - nightly-2020-09-24
 
     steps:
