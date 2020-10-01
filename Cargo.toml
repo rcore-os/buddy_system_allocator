@@ -5,7 +5,7 @@ documentation = "https://docs.rs/buddy_system_allocator"
 homepage = "https://github.com/rcore-os/buddy_system_allocator"
 repository = "https://github.com/rcore-os/buddy_system_allocator"
 keywords = ["allocator", "no_std", "heap"]
-version = "0.4.0"
+version = "0.5.0"
 authors = ["Jiajie Chen <noc@jiegec.ac.cn>"]
 edition = "2018"
 license = "MIT"
@@ -17,6 +17,3 @@ use_spin = ["spin"]
 [dependencies.spin]
 version = "0.5"
 optional = true
-
-[dependencies]
-rustversion = "1.0"
