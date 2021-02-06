@@ -132,3 +132,16 @@ fn test_frame_allocator_alloc_and_free() {
         frame.dealloc(addr, 512);
     }
 }
+
+#[test]
+fn test_frame_allocator_alloc_and_free_complex() {
+    let mut frame = FrameAllocator::new();
+    frame.add_frame(100, 1024);
+    for _ in 0..10 {
+        let addr = frame.alloc(1).unwrap();
+        frame.dealloc(addr, 1);
+    }
+    let addr1 = frame.alloc(1).unwrap();
+    let addr2 = frame.alloc(1).unwrap();
+    assert_ne!(addr1, addr2);
+}

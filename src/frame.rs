@@ -111,9 +111,6 @@ impl FrameAllocator {
         let size = count.next_power_of_two();
         let class = size.trailing_zeros() as usize;
 
-        // Put back into free list
-        self.free_list[class].insert(frame);
-
         // Merge free buddy lists
         let mut current_ptr = frame;
         let mut current_class = class;
@@ -123,8 +120,8 @@ impl FrameAllocator {
                 // Free buddy found
                 current_ptr = min(current_ptr, buddy);
                 current_class += 1;
-                self.free_list[current_class].insert(current_ptr);
             } else {
+                self.free_list[current_class].insert(current_ptr);
                 break;
             }
         }
