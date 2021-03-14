@@ -234,12 +234,12 @@ pub struct LockedHeap<const ORDER: usize>(Mutex<Heap<ORDER>>);
 impl<const ORDER: usize> LockedHeap<ORDER> {
     /// Creates an empty heap
     pub const fn new() -> Self {
-        LockedHeap(Mutex::new(Heap::new()))
+        LockedHeap(Mutex::new(Heap::<ORDER>::new()))
     }
 
     /// Creates an empty heap
     pub const fn empty() -> Self {
-        LockedHeap(Mutex::new(Heap::new()))
+        LockedHeap(Mutex::new(Heap::<ORDER>::new()))
     }
 }
 
@@ -290,7 +290,7 @@ impl<const ORDER: usize> LockedHeapWithRescue<ORDER> {
     #[cfg(feature = "const_fn")]
     pub const fn new(rescue: fn(&mut Heap)) -> Self {
         LockedHeapWithRescue {
-            inner: Mutex::new(Heap::new()),
+            inner: Mutex::new(Heap::<ORDER>::new()),
             rescue,
         }
     }
@@ -299,7 +299,7 @@ impl<const ORDER: usize> LockedHeapWithRescue<ORDER> {
     #[cfg(not(feature = "const_fn"))]
     pub fn new(rescue: fn(&mut Heap<ORDER>)) -> Self {
         LockedHeapWithRescue {
-            inner: Mutex::new(Heap::new()),
+            inner: Mutex::new(Heap::<ORDER>::new()),
             rescue,
         }
     }
