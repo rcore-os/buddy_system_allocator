@@ -288,7 +288,7 @@ pub struct LockedHeapWithRescue<const ORDER: usize> {
 impl<const ORDER: usize> LockedHeapWithRescue<ORDER> {
     /// Creates an empty heap
     #[cfg(feature = "const_fn")]
-    pub const fn new(rescue: fn(&mut Heap, &Layout)) -> Self {
+    pub const fn new(rescue: fn(&mut Heap<ORDER>, &Layout)) -> Self {
         LockedHeapWithRescue {
             inner: Mutex::new(Heap::<ORDER>::new()),
             rescue,
