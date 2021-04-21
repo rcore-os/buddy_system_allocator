@@ -77,7 +77,7 @@ fn test_heap_oom() {
 #[test]
 fn test_heap_oom_rescue() {
     static mut SPACE: [usize; 100] = [0; 100];
-    let heap = LockedHeapWithRescue::new(|heap: &mut Heap<32>| unsafe {
+    let heap = LockedHeapWithRescue::new(|heap: &mut Heap<32>, _layout: &Layout| unsafe {
         heap.add_to_heap(SPACE.as_ptr() as usize, SPACE.as_ptr().add(100) as usize);
     });
 
