@@ -274,21 +274,21 @@ unsafe impl<const ORDER: usize> GlobalAlloc for LockedHeap<ORDER> {
 /// Create a locked heap:
 /// ```
 /// use buddy_system_allocator::*;
-/// let heap = LockedHeapWithRescue::new(|heap: &mut Heap<32>| {});
+/// let heap = LockedHeapWithRescue::new(|heap: &mut Heap<32>, layout: &core::alloc::Layout| {});
 /// ```
 ///
 /// Before oom, the allocator will try to call rescue function and try for one more time.
 #[cfg(feature = "use_spin")]
 pub struct LockedHeapWithRescue<const ORDER: usize> {
     inner: Mutex<Heap<ORDER>>,
-    rescue: fn(&mut Heap<ORDER>),
+    rescue: fn(&mut Heap<ORDER>, &Layout),
 }
 
 #[cfg(feature = "use_spin")]
 impl<const ORDER: usize> LockedHeapWithRescue<ORDER> {
     /// Creates an empty heap
     #[cfg(feature = "const_fn")]
-    pub const fn new(rescue: fn(&mut Heap)) -> Self {
+    pub const fn new(rescue: fn(&mut Heap<ORDER>, &Layout)) -> Self {
         LockedHeapWithRescue {
             inner: Mutex::new(Heap::<ORDER>::new()),
             rescue,
@@ -297,7 +297,7 @@ impl<const ORDER: usize> LockedHeapWithRescue<ORDER> {
 
     /// Creates an empty heap
     #[cfg(not(feature = "const_fn"))]
-    pub fn new(rescue: fn(&mut Heap<ORDER>)) -> Self {
+    pub fn new(rescue: fn(&mut Heap<ORDER>, &Layout)) -> Self {
         LockedHeapWithRescue {
             inner: Mutex::new(Heap::<ORDER>::new()),
             rescue,
@@ -321,7 +321,7 @@ unsafe impl<const ORDER: usize> GlobalAlloc for LockedHeapWithRescue<ORDER> {
         match inner.alloc(layout) {
             Ok(allocation) => allocation.as_ptr(),
             Err(_) => {
-                (self.rescue)(&mut inner);
+                (self.rescue)(&mut inner, &layout);
                 inner
                     .alloc(layout)
                     .ok()
