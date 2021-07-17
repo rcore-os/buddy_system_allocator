@@ -13,7 +13,7 @@ To use buddy_system_allocator for global allocator:
 use buddy_system_allocator::LockedHeap;
 
 #[global_allocator]
-static HEAP_ALLOCATOR: LockedHeap = LockedHeap::empty();
+static HEAP_ALLOCATOR: LockedHeap = LockedHeap::<32>::empty();
 ```
 
 To init the allocator:
