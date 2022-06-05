@@ -14,7 +14,7 @@ jobs:
       matrix:
         rust: 
         - stable
-        - nightly-2021-03-09
+        - nightly-2022-04-11
 
     steps:
     - uses: actions/checkout@v2
