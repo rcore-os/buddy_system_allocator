@@ -94,7 +94,7 @@ impl<const ORDER: usize> Heap<ORDER> {
         self.total += total;
     }
 
-    /// Add a range of memory [start, end) to the heap
+    /// Add a range of memory [start, start+size) to the heap
     pub unsafe fn init(&mut self, start: usize, size: usize) {
         self.add_to_heap(start, start + size);
     }
