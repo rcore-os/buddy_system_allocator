@@ -18,3 +18,10 @@ const_fn = []
 [dependencies.spin]
 version = "0.9.3"
 optional = true
+
+[dev-dependencies]
+criterion = "0.3"
+
+[[bench]]
+name = "memory_allocator_benchmark"
+harness = false
