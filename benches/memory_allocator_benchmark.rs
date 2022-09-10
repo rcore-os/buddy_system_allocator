@@ -1,6 +1,9 @@
 #[macro_use]
 extern crate alloc;
 
+#[macro_use]
+extern crate ctor;
+
 use std::sync::Arc;
 use std::thread;
 use std::thread::sleep;
@@ -11,22 +14,12 @@ use alloc::alloc::Layout;
 use buddy_system_allocator::LockedHeap;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
-const LARGE_SIZE: usize = 1024;
-const SMALL_SIZE: usize = 8;
-const THREAD_SIZE: usize = 10;
+// use for first three benchmark
 const ALIGN: usize = 8;
 
 #[inline]
-pub fn large_alloc<const ORDER: usize>(heap: &LockedHeap<ORDER>) {
-    let layout = unsafe { Layout::from_size_align_unchecked(LARGE_SIZE, ALIGN) };
-    unsafe {
-        let addr = heap.alloc(layout);
-        heap.dealloc(addr, layout);
-    }
-}
-
-#[inline]
 pub fn small_alloc<const ORDER: usize>(heap: &LockedHeap<ORDER>) {
+    const SMALL_SIZE: usize = 8;
     let layout = unsafe { Layout::from_size_align_unchecked(SMALL_SIZE, ALIGN) };
     unsafe {
         let addr = heap.alloc(layout);
@@ -35,7 +28,18 @@ pub fn small_alloc<const ORDER: usize>(heap: &LockedHeap<ORDER>) {
 }
 
 #[inline]
+pub fn large_alloc<const ORDER: usize>(heap: &LockedHeap<ORDER>) {
+    const LARGE_SIZE: usize = 1024;
+    let layout = unsafe { Layout::from_size_align_unchecked(LARGE_SIZE, ALIGN) };
+    unsafe {
+        let addr = heap.alloc(layout);
+        heap.dealloc(addr, layout);
+    }
+}
+
+#[inline]
 pub fn mutil_thread_alloc<const ORDER: usize>(heap: &'static LockedHeap<ORDER>) {
+    const THREAD_SIZE: usize = 10;
     let mut threads = Vec::with_capacity(THREAD_SIZE);
     let alloc = Arc::new(heap);
     for i in 0..THREAD_SIZE {
@@ -80,41 +84,35 @@ pub fn mutil_thread_alloc<const ORDER: usize>(heap: &'static LockedHeap<ORDER>) 
 /// ----------------------------------------------------------------------
 ///
 #[inline]
-pub fn thread_test<const ORDER: usize>(heap: &'static LockedHeap<ORDER>) {
+pub fn thread_test() {
     const N_ITERATIONS: usize = 50;
-    const N_OBJECTS: usize = 30000;
+    const N_OBJECTS: usize = 3000;
     const N_THREADS: usize = 10;
     const OBJECT_SIZE: usize = 1;
 
-    let mut threads = Vec::with_capacity(THREAD_SIZE);
-    let alloc = Arc::new(heap);
+    #[derive(Clone)]
+    struct Foo {
+        pub a: i32,
+        pub b: i32,
+    }
 
-    for i in 0..THREAD_SIZE {
-        let prethread_alloc = alloc.clone();
+    let mut threads = Vec::with_capacity(N_THREADS);
+
+    for _i in 0..N_THREADS {
         let handle = thread::spawn(move || {
-            // a = new Foo * [nobjects / nthreads];
-            let layout = unsafe {
-                Layout::from_size_align_unchecked(SMALL_SIZE * (N_OBJECTS / N_THREADS), ALIGN)
-            };
-            let addr = unsafe { prethread_alloc.alloc(layout) };
-            for j in 0..N_ITERATIONS {
+            // let a = new Foo * [nobjects / nthreads];
+            let mut a = Vec::with_capacity(N_OBJECTS / N_THREADS);
+            for _j in 0..N_ITERATIONS {
                 // inner object:
                 // a[i] = new Foo[objSize];
-                let mut addrs = vec![];
-                let layout =
-                    unsafe { Layout::from_size_align_unchecked(SMALL_SIZE * OBJECT_SIZE, ALIGN) };
-                for i in 0..(N_OBJECTS / N_THREADS) {
-                    addrs.push(unsafe { prethread_alloc.alloc(layout) });
-                }
-                for addr in addrs {
-                    unsafe { prethread_alloc.dealloc(addr, layout) }
+                for _k in 0..(N_OBJECTS / N_THREADS) {
+                    a.push(vec![Foo { a: 0, b: 1 }; OBJECT_SIZE]);
                 }
             }
-            unsafe { prethread_alloc.dealloc(addr, layout) }
+            // auto drop here
         });
         threads.push(handle);
     }
-    drop(alloc);
 
     for t in threads {
         t.join().unwrap();
@@ -122,21 +120,36 @@ pub fn thread_test<const ORDER: usize>(heap: &'static LockedHeap<ORDER>) {
 }
 
 const ORDER: usize = 32;
-static HEAP_ALLOCATOR: LockedHeap<ORDER> = LockedHeap::<ORDER>::new();
-const KERNEL_HEAP_SIZE: usize = 16 * 1024 * 1024;
 const MACHINE_ALIGN: usize = core::mem::size_of::<usize>();
+const KERNEL_HEAP_SIZE: usize = 16 * 1024 * 1024;
 const HEAP_BLOCK: usize = KERNEL_HEAP_SIZE / MACHINE_ALIGN;
 static mut HEAP: [usize; HEAP_BLOCK] = [0; HEAP_BLOCK];
 
-pub fn criterion_benchmark(c: &mut Criterion) {
-    // init heap
+/// Use `LockedHeap` as global allocator
+#[global_allocator]
+static HEAP_ALLOCATOR: LockedHeap<ORDER> = LockedHeap::<ORDER>::new();
+
+/// # Init heap
+///
+/// We need `ctor` here because benchmark is running behind the std enviroment,
+/// which means std will do some initialization before execute `fn main()`.
+/// However, our memory allocator must be init in runtime(use linkedlist, which
+/// can not be evaluated in compile time). And in the initialization phase, heap
+/// memory is needed.
+///
+/// So the solution in this dilemma is to run `fn init_heap()` in initialization phase
+/// rather than in `fn main()`. We need `ctor` to do this.
+#[ctor]
+fn init_heap() {
     let heap_start = unsafe { HEAP.as_ptr() as usize };
     unsafe {
         HEAP_ALLOCATOR
             .lock()
             .init(heap_start, HEAP_BLOCK * MACHINE_ALIGN);
     }
+}
 
+pub fn criterion_benchmark(c: &mut Criterion) {
     // run benchmark
     c.bench_function("small alloc", |b| {
         b.iter(|| small_alloc(black_box(&HEAP_ALLOCATOR)))
@@ -147,9 +160,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("mutil thread alloc", |b| {
         b.iter(|| mutil_thread_alloc(black_box(&HEAP_ALLOCATOR)))
     });
-    c.bench_function("threadtest", |b| {
-        b.iter(|| thread_test(black_box(&HEAP_ALLOCATOR)))
-    });
+    c.bench_function("threadtest", |b| b.iter(|| thread_test()));
 }
 
 criterion_group!(benches, criterion_benchmark);

@@ -21,6 +21,7 @@ optional = true
 
 [dev-dependencies]
 criterion = "0.3"
+ctor = "0.1.23"
 
 [[bench]]
 name = "memory_allocator_benchmark"
