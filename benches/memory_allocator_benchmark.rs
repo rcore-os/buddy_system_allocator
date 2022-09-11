@@ -74,11 +74,9 @@ pub fn mutil_thread_random_size<const ORDER: usize>(heap: &'static LockedHeap<OR
     }
 }
 
-/// # From **Hoard** benchmark: threadtest.cpp, rewrite in Rust
+/// Multithread benchmark inspired by **Hoard** benchmark
 ///
-/// # Warnning
-///
-/// This benchmark generally needs long time to finish
+/// Warning: This benchmark generally needs long time to finish
 ///
 /// ----------------------------------------------------------------------
 /// Hoard: A Fast, Scalable, and Memory-Efficient Allocator
@@ -155,7 +153,7 @@ static mut HEAP: [usize; HEAP_BLOCK] = [0; HEAP_BLOCK];
 #[global_allocator]
 static HEAP_ALLOCATOR: LockedHeap<ORDER> = LockedHeap::<ORDER>::new();
 
-/// # Init heap
+/// Init heap
 ///
 /// We need `ctor` here because benchmark is running behind the std enviroment,
 /// which means std will do some initialization before execute `fn main()`.
