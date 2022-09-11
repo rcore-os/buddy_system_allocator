@@ -1,6 +1,5 @@
 #[macro_use]
 extern crate alloc;
-
 #[macro_use]
 extern crate ctor;
 
@@ -14,12 +13,13 @@ use alloc::alloc::Layout;
 use buddy_system_allocator::LockedHeap;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
-// use for first three benchmark
+const SMALL_SIZE: usize = 8;
+const LARGE_SIZE: usize = 1024 * 1024; // 1M
 const ALIGN: usize = 8;
 
+/// Alloc small object
 #[inline]
 pub fn small_alloc<const ORDER: usize>(heap: &LockedHeap<ORDER>) {
-    const SMALL_SIZE: usize = 8;
     let layout = unsafe { Layout::from_size_align_unchecked(SMALL_SIZE, ALIGN) };
     unsafe {
         let addr = heap.alloc(layout);
@@ -27,9 +27,9 @@ pub fn small_alloc<const ORDER: usize>(heap: &LockedHeap<ORDER>) {
     }
 }
 
+/// Alloc large object
 #[inline]
 pub fn large_alloc<const ORDER: usize>(heap: &LockedHeap<ORDER>) {
-    const LARGE_SIZE: usize = 1024;
     let layout = unsafe { Layout::from_size_align_unchecked(LARGE_SIZE, ALIGN) };
     unsafe {
         let addr = heap.alloc(layout);
@@ -37,18 +37,32 @@ pub fn large_alloc<const ORDER: usize>(heap: &LockedHeap<ORDER>) {
     }
 }
 
+/// Multithreads alloc random sizes of object
 #[inline]
-pub fn mutil_thread_alloc<const ORDER: usize>(heap: &'static LockedHeap<ORDER>) {
+pub fn mutil_thread_random_size<const ORDER: usize>(heap: &'static LockedHeap<ORDER>) {
     const THREAD_SIZE: usize = 10;
+
+    use rand::prelude::*;
+    use rand::{Rng, SeedableRng};
+    use rand_chacha::ChaCha8Rng;
+
     let mut threads = Vec::with_capacity(THREAD_SIZE);
     let alloc = Arc::new(heap);
     for i in 0..THREAD_SIZE {
         let prethread_alloc = alloc.clone();
         let handle = thread::spawn(move || {
-            let layout = unsafe { Layout::from_size_align_unchecked(i * THREAD_SIZE, ALIGN) };
-            let addr;
-            unsafe { addr = prethread_alloc.alloc(layout) }
+            // generate a random size of object use seed `i` to ensure the fixed
+            // result of each turn
+            let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(i as u64);
+            // generate a random object size in range of [SMALL_SIZE ..= LARGE_SIZE]
+            let layout = unsafe {
+                Layout::from_size_align_unchecked(rng.gen_range(SMALL_SIZE..=LARGE_SIZE), ALIGN)
+            };
+            let addr = unsafe { prethread_alloc.alloc(layout) };
+
+            // sleep for a while
             sleep(Duration::from_nanos((THREAD_SIZE - i) as u64));
+
             unsafe { prethread_alloc.dealloc(addr, layout) }
         });
         threads.push(handle);
@@ -86,7 +100,7 @@ pub fn mutil_thread_alloc<const ORDER: usize>(heap: &'static LockedHeap<ORDER>) 
 #[inline]
 pub fn thread_test() {
     const N_ITERATIONS: usize = 50;
-    const N_OBJECTS: usize = 3000;
+    const N_OBJECTS: usize = 30000;
     const N_THREADS: usize = 10;
     const OBJECT_SIZE: usize = 1;
 
@@ -102,11 +116,21 @@ pub fn thread_test() {
         let handle = thread::spawn(move || {
             // let a = new Foo * [nobjects / nthreads];
             let mut a = Vec::with_capacity(N_OBJECTS / N_THREADS);
-            for _j in 0..N_ITERATIONS {
+            for j in 0..N_ITERATIONS {
                 // inner object:
                 // a[i] = new Foo[objSize];
-                for _k in 0..(N_OBJECTS / N_THREADS) {
-                    a.push(vec![Foo { a: 0, b: 1 }; OBJECT_SIZE]);
+                for k in 0..(N_OBJECTS / N_THREADS) {
+                    a.push(vec![
+                        Foo {
+                            a: k as i32,
+                            b: j as i32
+                        };
+                        OBJECT_SIZE
+                    ]);
+
+                    // in order to prevent optimization delete allocation directly
+                    // FIXME: don't know whether it works or not
+                    a[k][0].a += a[k][0].b;
                 }
             }
             // auto drop here
@@ -121,7 +145,9 @@ pub fn thread_test() {
 
 const ORDER: usize = 32;
 const MACHINE_ALIGN: usize = core::mem::size_of::<usize>();
-const KERNEL_HEAP_SIZE: usize = 16 * 1024 * 1024;
+/// for now 128M is needed
+/// TODO: reduce memory use
+const KERNEL_HEAP_SIZE: usize = 128 * 1024 * 1024;
 const HEAP_BLOCK: usize = KERNEL_HEAP_SIZE / MACHINE_ALIGN;
 static mut HEAP: [usize; HEAP_BLOCK] = [0; HEAP_BLOCK];
 
@@ -149,6 +175,7 @@ fn init_heap() {
     }
 }
 
+/// Entry of benchmarks
 pub fn criterion_benchmark(c: &mut Criterion) {
     // run benchmark
     c.bench_function("small alloc", |b| {
@@ -157,8 +184,8 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("large alloc", |b| {
         b.iter(|| large_alloc(black_box(&HEAP_ALLOCATOR)))
     });
-    c.bench_function("mutil thread alloc", |b| {
-        b.iter(|| mutil_thread_alloc(black_box(&HEAP_ALLOCATOR)))
+    c.bench_function("mutil thread random size", |b| {
+        b.iter(|| mutil_thread_random_size(black_box(&HEAP_ALLOCATOR)))
     });
     c.bench_function("threadtest", |b| b.iter(|| thread_test()));
 }
