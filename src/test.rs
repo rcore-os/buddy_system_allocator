@@ -122,11 +122,20 @@ fn test_frame_allocator_add() {
 }
 
 #[test]
-#[should_panic]
-fn test_frame_allocator_add_large_size_panics() {
+fn test_frame_allocator_allocate_large() {
+    let mut frame = FrameAllocator::<32>::new();
+    assert_eq!(frame.alloc(10_000_000_000), None);
+}
+
+#[test]
+fn test_frame_allocator_add_large_size_split() {
     let mut frame = FrameAllocator::<32>::new();
 
     frame.insert(0..10_000_000_000);
+
+    assert_eq!(frame.alloc(0x8000_0001), None);
+    assert_eq!(frame.alloc(0x8000_0000), Some(0x8000_0000));
+    assert_eq!(frame.alloc(0x8000_0000), Some(0x1_0000_0000));
 }
 
 #[test]
