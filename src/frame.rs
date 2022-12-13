@@ -1,7 +1,8 @@
 use super::prev_power_of_two;
 use alloc::collections::BTreeSet;
+use core::alloc::Layout;
 use core::array;
-use core::cmp::min;
+use core::cmp::{max, min};
 use core::ops::Range;
 
 #[cfg(feature = "use_spin")]
@@ -71,14 +72,28 @@ impl<const ORDER: usize> FrameAllocator<ORDER> {
         self.total += total;
     }
 
-    /// Add a range of frame to the allocator
+    /// Add a range of frames to the allocator.
     pub fn insert(&mut self, range: Range<usize>) {
         self.add_frame(range.start, range.end);
     }
 
-    /// Alloc a range of frames from the allocator, return the first frame of the allocated range
+    /// Allocate a range of frames from the allocator, returning the first frame of the allocated
+    /// range.
     pub fn alloc(&mut self, count: usize) -> Option<usize> {
         let size = count.next_power_of_two();
+        self.alloc_power_of_two(size)
+    }
+
+    /// Allocate a range of frames with the given size and alignment from the allocator, returning
+    /// the first frame of the allocated range.
+    pub fn alloc_aligned(&mut self, layout: Layout) -> Option<usize> {
+        let size = max(layout.size().next_power_of_two(), layout.align());
+        self.alloc_power_of_two(size)
+    }
+
+    /// Allocate a range of frames of the given size from the allocator. The size must be a power of
+    /// two. The allocated range will have alignment equal to the size.
+    fn alloc_power_of_two(&mut self, size: usize) -> Option<usize> {
         let class = size.trailing_zeros() as usize;
         for i in class..self.free_list.len() {
             // Find the first non-empty size class
@@ -109,14 +124,29 @@ impl<const ORDER: usize> FrameAllocator<ORDER> {
         None
     }
 
-    /// Dealloc a range of frames [frame, frame+count) from the frame allocator.
+    /// Deallocate a range of frames [frame, frame+count) from the frame allocator.
+    ///
     /// The range should be exactly the same when it was allocated, as in heap allocator
-    pub fn dealloc(&mut self, frame: usize, count: usize) {
+    pub fn dealloc(&mut self, start_frame: usize, count: usize) {
         let size = count.next_power_of_two();
+        self.dealloc_power_of_two(start_frame, size)
+    }
+
+    /// Deallocate a range of frames which was previously allocated by [`alloc_aligned`].
+    ///
+    /// The layout must be exactly the same as when it was allocated.
+    pub fn dealloc_aligned(&mut self, start_frame: usize, layout: Layout) {
+        let size = max(layout.size().next_power_of_two(), layout.align());
+        self.dealloc_power_of_two(start_frame, size)
+    }
+
+    /// Deallocate a range of frames with the given size from the allocator. The size must be a
+    /// power of two.
+    fn dealloc_power_of_two(&mut self, start_frame: usize, size: usize) {
         let class = size.trailing_zeros() as usize;
 
         // Merge free buddy lists
-        let mut current_ptr = frame;
+        let mut current_ptr = start_frame;
         let mut current_class = class;
         while current_class < self.free_list.len() {
             let buddy = current_ptr ^ (1 << current_class);
