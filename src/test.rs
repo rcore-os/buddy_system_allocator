@@ -103,13 +103,13 @@ fn test_heap_alloc_and_free() {
 
 #[test]
 fn test_empty_frame_allocator() {
-    let mut frame = FrameAllocator::new();
+    let mut frame = FrameAllocator::<32>::new();
     assert!(frame.alloc(1).is_none());
 }
 
 #[test]
 fn test_frame_allocator_add() {
-    let mut frame = FrameAllocator::new();
+    let mut frame = FrameAllocator::<32>::new();
     assert!(frame.alloc(1).is_none());
 
     frame.insert(0..3);
@@ -122,8 +122,23 @@ fn test_frame_allocator_add() {
 }
 
 #[test]
+#[should_panic]
+fn test_frame_allocator_add_large_size_panics() {
+    let mut frame = FrameAllocator::<32>::new();
+
+    frame.insert(0..10_000_000_000);
+}
+
+#[test]
+fn test_frame_allocator_add_large_size() {
+    let mut frame = FrameAllocator::<33>::new();
+
+    frame.insert(0..10_000_000_000);
+}
+
+#[test]
 fn test_frame_allocator_alloc_and_free() {
-    let mut frame = FrameAllocator::new();
+    let mut frame = FrameAllocator::<32>::new();
     assert!(frame.alloc(1).is_none());
 
     frame.add_frame(0, 1024);
@@ -135,7 +150,7 @@ fn test_frame_allocator_alloc_and_free() {
 
 #[test]
 fn test_frame_allocator_alloc_and_free_complex() {
-    let mut frame = FrameAllocator::new();
+    let mut frame = FrameAllocator::<32>::new();
     frame.add_frame(100, 1024);
     for _ in 0..10 {
         let addr = frame.alloc(1).unwrap();
