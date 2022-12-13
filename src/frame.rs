@@ -12,8 +12,8 @@ use spin::Mutex;
 /// A frame allocator that uses buddy system, requiring a global allocator.
 ///
 /// The max order of the allocator is specified via the const generic parameter `ORDER`. The frame
-/// allocator will only be able to allocate ranges of size up to 2\*\*ORDER, out of a total range of
-/// size at most 2\*\*(ORDER + 1) - 1.
+/// allocator will only be able to allocate ranges of size up to 2<sup>ORDER</sup>, out of a total
+/// range of size at most 2<sup>ORDER + 1</sup> - 1.
 ///
 /// # Usage
 ///
@@ -41,7 +41,7 @@ pub struct FrameAllocator<const ORDER: usize = 32> {
 impl<const ORDER: usize> FrameAllocator<ORDER> {
     /// Create an empty frame allocator
     pub fn new() -> Self {
-        FrameAllocator {
+        Self {
             free_list: array::from_fn(|_| BTreeSet::default()),
             allocated: 0,
             total: 0,
@@ -157,7 +157,7 @@ pub struct LockedFrameAllocator<const ORDER: usize = 32>(Mutex<FrameAllocator<OR
 impl<const ORDER: usize> LockedFrameAllocator<ORDER> {
     /// Creates an empty heap
     pub fn new() -> Self {
-        LockedFrameAllocator(Mutex::new(FrameAllocator::new()))
+        Self(Mutex::new(FrameAllocator::new()))
     }
 }
 
