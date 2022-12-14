@@ -62,7 +62,10 @@ impl<const ORDER: usize> FrameAllocator<ORDER> {
             } else {
                 32
             };
-            let size = min(lowbit, prev_power_of_two(end - current_start));
+            let size = min(
+                min(lowbit, prev_power_of_two(end - current_start)),
+                1 << (ORDER - 1),
+            );
             total += size;
 
             self.free_list[size.trailing_zeros() as usize].insert(current_start);
