@@ -143,6 +143,7 @@ fn test_frame_allocator_add_large_size() {
     let mut frame = FrameAllocator::<33>::new();
 
     frame.insert(0..10_000_000_000);
+    assert_eq!(frame.alloc(0x8000_0001), Some(0x1_0000_0000));
 }
 
 #[test]
