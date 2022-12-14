@@ -5,8 +5,8 @@ documentation = "https://docs.rs/buddy_system_allocator"
 homepage = "https://github.com/rcore-os/buddy_system_allocator"
 repository = "https://github.com/rcore-os/buddy_system_allocator"
 keywords = ["allocator", "no_std", "heap"]
-version = "0.8.0"
-authors = ["Jiajie Chen <noc@jiegec.ac.cn>", "Vinay Chandra Dommeti <github@vinay.vc>"]
+version = "0.9.0"
+authors = ["Jiajie Chen <c@jia.je>", "Vinay Chandra Dommeti <github@vinay.vc>", "Andrew Walbran <qwandor@google.com>"]
 edition = "2021"
 license = "MIT"
 
