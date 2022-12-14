@@ -160,3 +160,25 @@ fn test_frame_allocator_alloc_and_free_complex() {
     let addr2 = frame.alloc(1).unwrap();
     assert_ne!(addr1, addr2);
 }
+
+#[test]
+fn test_frame_allocator_aligned() {
+    let mut frame = FrameAllocator::<32>::new();
+    frame.add_frame(1, 64);
+    assert_eq!(
+        frame.alloc_aligned(Layout::from_size_align(2, 4).unwrap()),
+        Some(4)
+    );
+    assert_eq!(
+        frame.alloc_aligned(Layout::from_size_align(2, 2).unwrap()),
+        Some(2)
+    );
+    assert_eq!(
+        frame.alloc_aligned(Layout::from_size_align(2, 1).unwrap()),
+        Some(8)
+    );
+    assert_eq!(
+        frame.alloc_aligned(Layout::from_size_align(1, 16).unwrap()),
+        Some(16)
+    );
+}
