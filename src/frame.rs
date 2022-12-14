@@ -1,5 +1,6 @@
 use super::prev_power_of_two;
 use alloc::collections::BTreeSet;
+use core::array;
 use core::cmp::min;
 use core::ops::Range;
 
@@ -8,15 +9,18 @@ use core::ops::Deref;
 #[cfg(feature = "use_spin")]
 use spin::Mutex;
 
-/// A frame allocator that uses buddy system,
-/// requiring a global allocator
+/// A frame allocator that uses buddy system, requiring a global allocator.
+///
+/// The max order of the allocator is specified via the const generic parameter `ORDER`. The frame
+/// allocator will only be able to allocate ranges of size up to 2<sup>ORDER</sup>, out of a total
+/// range of size at most 2<sup>ORDER + 1</sup> - 1.
 ///
 /// # Usage
 ///
 /// Create a frame allocator and add some frames to it:
 /// ```
 /// use buddy_system_allocator::*;
-/// let mut frame = FrameAllocator::new();
+/// let mut frame = FrameAllocator::<32>::new();
 /// assert!(frame.alloc(1).is_none());
 ///
 /// frame.add_frame(0, 3);
@@ -25,20 +29,20 @@ use spin::Mutex;
 /// let num = frame.alloc(2);
 /// assert_eq!(num, Some(0));
 /// ```
-pub struct FrameAllocator {
-    // buddy system with max order of 32
-    free_list: [BTreeSet<usize>; 32],
+pub struct FrameAllocator<const ORDER: usize = 32> {
+    // buddy system with max order of ORDER
+    free_list: [BTreeSet<usize>; ORDER],
 
     // statistics
     allocated: usize,
     total: usize,
 }
 
-impl FrameAllocator {
+impl<const ORDER: usize> FrameAllocator<ORDER> {
     /// Create an empty frame allocator
     pub fn new() -> Self {
-        FrameAllocator {
-            free_list: Default::default(),
+        Self {
+            free_list: array::from_fn(|_| BTreeSet::default()),
             allocated: 0,
             total: 0,
         }
@@ -137,7 +141,7 @@ impl FrameAllocator {
 /// Create a locked frame allocator and add frames to it:
 /// ```
 /// use buddy_system_allocator::*;
-/// let mut frame = LockedFrameAllocator::new();
+/// let mut frame = LockedFrameAllocator::<32>::new();
 /// assert!(frame.lock().alloc(1).is_none());
 ///
 /// frame.lock().add_frame(0, 3);
@@ -147,21 +151,21 @@ impl FrameAllocator {
 /// assert_eq!(num, Some(0));
 /// ```
 #[cfg(feature = "use_spin")]
-pub struct LockedFrameAllocator(Mutex<FrameAllocator>);
+pub struct LockedFrameAllocator<const ORDER: usize = 32>(Mutex<FrameAllocator<ORDER>>);
 
 #[cfg(feature = "use_spin")]
-impl LockedFrameAllocator {
+impl<const ORDER: usize> LockedFrameAllocator<ORDER> {
     /// Creates an empty heap
-    pub fn new() -> LockedFrameAllocator {
-        LockedFrameAllocator(Mutex::new(FrameAllocator::new()))
+    pub fn new() -> Self {
+        Self(Mutex::new(FrameAllocator::new()))
     }
 }
 
 #[cfg(feature = "use_spin")]
-impl Deref for LockedFrameAllocator {
-    type Target = Mutex<FrameAllocator>;
+impl<const ORDER: usize> Deref for LockedFrameAllocator<ORDER> {
+    type Target = Mutex<FrameAllocator<ORDER>>;
 
-    fn deref(&self) -> &Mutex<FrameAllocator> {
+    fn deref(&self) -> &Mutex<FrameAllocator<ORDER>> {
         &self.0
     }
 }
