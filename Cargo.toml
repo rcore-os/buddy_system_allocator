@@ -16,7 +16,7 @@ use_spin = ["spin"]
 const_fn = []
 
 [dependencies.spin]
-version = "0.9.3"
+version = "0.9.8"
 optional = true
 
 [dev-dependencies]
