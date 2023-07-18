@@ -89,6 +89,8 @@ impl<const ORDER: usize> FrameAllocator<ORDER> {
 
     /// Allocate a range of frames with the given size and alignment from the allocator, returning
     /// the first frame of the allocated range.
+    /// The allocated size is the maximum of the next power of two of the given size and the
+    /// alignment.
     pub fn alloc_aligned(&mut self, layout: Layout) -> Option<usize> {
         let size = max(layout.size().next_power_of_two(), layout.align());
         self.alloc_power_of_two(size)
