@@ -47,6 +47,8 @@ pub use frame::*;
 /// }
 /// ```
 pub struct Heap<const ORDER: usize> {
+    // base address, to allow heaps with weaker alignment
+    start: usize,
     // buddy system with max order of `ORDER`
     free_list: [linked_list::LinkedList; ORDER],
 
@@ -60,6 +62,7 @@ impl<const ORDER: usize> Heap<ORDER> {
     /// Create an empty heap
     pub const fn new() -> Self {
         Heap {
+            start: 0,
             free_list: [linked_list::LinkedList::new(); ORDER],
             user: 0,
             allocated: 0,
@@ -80,14 +83,14 @@ impl<const ORDER: usize> Heap<ORDER> {
         assert!(start <= end);
 
         let mut total = 0;
-        let mut current_start = start;
+        let mut current_start: usize = start - self.start;
+        let current_end: usize = end - self.start;
 
-        while current_start + size_of::<usize>() <= end {
-            let lowbit = current_start & (!current_start + 1);
-            let size = min(lowbit, prev_power_of_two(end - current_start));
+        while current_start + size_of::<usize>() <= current_end {
+            let size = prev_power_of_two(current_end - current_start);
             total += size;
 
-            self.free_list[size.trailing_zeros() as usize].push(current_start as *mut usize);
+            self.free_list[size.trailing_zeros() as usize].push((self.start + current_start) as *mut usize);
             current_start += size;
         }
 
@@ -96,6 +99,7 @@ impl<const ORDER: usize> Heap<ORDER> {
 
     /// Add a range of memory [start, start+size) to the heap
     pub unsafe fn init(&mut self, start: usize, size: usize) {
+        self.start = start;
         self.add_to_heap(start, start + size);
     }
 
@@ -156,7 +160,7 @@ impl<const ORDER: usize> Heap<ORDER> {
             let mut current_ptr = ptr.as_ptr() as usize;
             let mut current_class = class;
             while current_class < self.free_list.len() {
-                let buddy = current_ptr ^ (1 << current_class);
+                let buddy = self.start + ((current_ptr - self.start) ^ (1 << current_class));
                 let mut flag = false;
                 for block in self.free_list[current_class].iter_mut() {
                     if block.value() as usize == buddy {
