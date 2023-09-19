@@ -1,6 +1,6 @@
 //! Provide the intrusive LinkedList
-#![allow(dead_code)]
 
+use core::marker::PhantomData;
 use core::{fmt, ptr};
 
 /// An intrusive linked list
@@ -52,7 +52,7 @@ impl LinkedList {
     pub fn iter(&self) -> Iter {
         Iter {
             curr: self.head,
-            list: self,
+            list: PhantomData,
         }
     }
 
@@ -61,7 +61,7 @@ impl LinkedList {
         IterMut {
             prev: &mut self.head as *mut *mut usize as *mut usize,
             curr: self.head,
-            list: self,
+            list: PhantomData,
         }
     }
 }
@@ -75,7 +75,7 @@ impl fmt::Debug for LinkedList {
 /// An iterator over the linked list
 pub struct Iter<'a> {
     curr: *mut usize,
-    list: &'a LinkedList,
+    list: PhantomData<&'a LinkedList>,
 }
 
 impl<'a> Iterator for Iter<'a> {
@@ -117,7 +117,7 @@ impl ListNode {
 
 /// A mutable iterator over the linked list
 pub struct IterMut<'a> {
-    list: &'a mut LinkedList,
+    list: PhantomData<&'a mut LinkedList>,
     prev: *mut usize,
     curr: *mut usize,
 }
