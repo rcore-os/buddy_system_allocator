@@ -10,7 +10,9 @@ extern crate spin;
 
 extern crate alloc;
 
-use core::alloc::{GlobalAlloc, Layout};
+#[cfg(feature = "use_spin")]
+use core::alloc::GlobalAlloc;
+use core::alloc::Layout;
 use core::cmp::{max, min};
 use core::fmt;
 use core::mem::size_of;
@@ -76,7 +78,7 @@ impl<const ORDER: usize> Heap<ORDER> {
     pub unsafe fn add_to_heap(&mut self, mut start: usize, mut end: usize) {
         // avoid unaligned access on some platforms
         start = (start + size_of::<usize>() - 1) & (!size_of::<usize>() + 1);
-        end = end & (!size_of::<usize>() + 1);
+        end &= !size_of::<usize>() + 1;
         assert!(start <= end);
 
         let mut total = 0;
@@ -338,5 +340,5 @@ unsafe impl<const ORDER: usize> GlobalAlloc for LockedHeapWithRescue<ORDER> {
 }
 
 pub(crate) fn prev_power_of_two(num: usize) -> usize {
-    1 << (8 * (size_of::<usize>()) - num.leading_zeros() as usize - 1)
+    1 << (usize::BITS as usize - num.leading_zeros() as usize - 1)
 }

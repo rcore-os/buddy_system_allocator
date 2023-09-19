@@ -115,7 +115,7 @@ impl<const ORDER: usize> FrameAllocator<ORDER> {
                     }
                 }
 
-                let result = self.free_list[class].iter().next().clone();
+                let result = self.free_list[class].iter().next();
                 if let Some(result_ref) = result {
                     let result = *result_ref;
                     self.free_list[class].remove(&result);
@@ -155,7 +155,7 @@ impl<const ORDER: usize> FrameAllocator<ORDER> {
         let mut current_class = class;
         while current_class < self.free_list.len() {
             let buddy = current_ptr ^ (1 << current_class);
-            if self.free_list[current_class].remove(&buddy) == true {
+            if self.free_list[current_class].remove(&buddy) {
                 // Free buddy found
                 current_ptr = min(current_ptr, buddy);
                 current_class += 1;
