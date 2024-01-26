@@ -20,8 +20,8 @@ version = "0.9.8"
 optional = true
 
 [dev-dependencies]
-criterion = "0.3"
-ctor = "0.1.23"
+criterion = "0.5.1"
+ctor = "0.2.6"
 rand = "0.8.5"
 rand_chacha = "0.3.1"
 
