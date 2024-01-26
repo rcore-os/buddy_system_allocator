@@ -157,7 +157,8 @@ impl<const ORDER: usize> Heap<ORDER> {
             // Merge free buddy lists
             let mut current_ptr = ptr.as_ptr() as usize;
             let mut current_class = class;
-            while current_class < self.free_list.len() {
+
+            while current_class < self.free_list.len() - 1 {
                 let buddy = current_ptr ^ (1 << current_class);
                 let mut flag = false;
                 for block in self.free_list[current_class].iter_mut() {

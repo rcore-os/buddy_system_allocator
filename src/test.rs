@@ -192,3 +192,34 @@ fn test_frame_allocator_aligned() {
         Some(16)
     );
 }
+
+#[test]
+fn test_heap_merge_final_order() {
+    const NUM_ORDERS: usize = 5;
+
+    let backing_size = 1 << NUM_ORDERS;
+    let backing_layout = Layout::from_size_align(backing_size, backing_size).unwrap();
+
+    // create a new heap with 5 orders
+    let mut heap = Heap::<NUM_ORDERS>::new();
+
+    // allocate host memory for use by heap
+    let backing_allocation = unsafe { std::alloc::alloc(backing_layout) };
+
+    let start = backing_allocation as usize;
+    let middle = unsafe { backing_allocation.add(backing_size / 2) } as usize;
+    let end = unsafe { backing_allocation.add(backing_size) } as usize;
+
+    // add two contiguous ranges of memory
+    unsafe { heap.add_to_heap(start, middle) };
+    unsafe { heap.add_to_heap(middle, end) };
+
+    // NUM_ORDERS - 1 is the maximum order of the heap
+    let layout = Layout::from_size_align(1 << (NUM_ORDERS - 1), 1).unwrap();
+
+    // allocation should succeed, using one of the added ranges
+    let alloc = heap.alloc(layout).unwrap();
+
+    // deallocation should not attempt to merge the two contiguous ranges as the next order does not exist
+    heap.dealloc(alloc, layout);
+}
