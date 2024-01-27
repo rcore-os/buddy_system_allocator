@@ -12,6 +12,7 @@ use alloc::alloc::GlobalAlloc;
 use alloc::alloc::Layout;
 use buddy_system_allocator::LockedHeap;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use rand::{Rng, SeedableRng};
 
 const SMALL_SIZE: usize = 8;
 const LARGE_SIZE: usize = 1024 * 1024; // 1M
@@ -41,10 +42,6 @@ pub fn large_alloc<const ORDER: usize>(heap: &LockedHeap<ORDER>) {
 #[inline]
 pub fn mutil_thread_random_size<const ORDER: usize>(heap: &'static LockedHeap<ORDER>) {
     const THREAD_SIZE: usize = 10;
-
-    use rand::prelude::*;
-    use rand::{Rng, SeedableRng};
-    use rand_chacha::ChaCha8Rng;
 
     let mut threads = Vec::with_capacity(THREAD_SIZE);
     let alloc = Arc::new(heap);
