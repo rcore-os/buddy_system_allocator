@@ -8,6 +8,7 @@ extern crate std;
 #[cfg(feature = "use_spin")]
 extern crate spin;
 
+#[cfg(feature = "alloc")]
 extern crate alloc;
 
 #[cfg(feature = "use_spin")]
@@ -22,11 +23,13 @@ use core::ptr::NonNull;
 #[cfg(feature = "use_spin")]
 use spin::Mutex;
 
+#[cfg(feature = "alloc")]
 mod frame;
 pub mod linked_list;
 #[cfg(test)]
 mod test;
 
+#[cfg(feature = "alloc")]
 pub use frame::*;
 
 /// A heap that uses buddy system with configurable order.

@@ -22,5 +22,7 @@ jobs:
       run: rustup default ${{ matrix.rust }}
     - name: Build
       run: cargo build --verbose
+    - name: Build without default features
+      run: cargo build --no-default-features --verbose
     - name: Run tests
       run: cargo test --verbose
