@@ -6,14 +6,19 @@ homepage = "https://github.com/rcore-os/buddy_system_allocator"
 repository = "https://github.com/rcore-os/buddy_system_allocator"
 keywords = ["allocator", "no_std", "heap"]
 version = "0.9.1"
-authors = ["Jiajie Chen <c@jia.je>", "Vinay Chandra Dommeti <github@vinay.vc>", "Andrew Walbran <qwandor@google.com>"]
+authors = [
+  "Jiajie Chen <c@jia.je>",
+  "Vinay Chandra Dommeti <github@vinay.vc>",
+  "Andrew Walbran <qwandor@google.com>",
+]
 edition = "2021"
 license = "MIT"
 
 [features]
-default = ["use_spin"]
-use_spin = ["spin"]
+default = ["alloc", "use_spin"]
+alloc = []
 const_fn = []
+use_spin = ["spin"]
 
 [dependencies.spin]
 version = "0.9.8"
