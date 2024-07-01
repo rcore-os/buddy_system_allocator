@@ -1,4 +1,3 @@
-#![cfg_attr(feature = "const_fn", feature(const_mut_refs, const_fn_fn_ptr_basics))]
 #![no_std]
 
 #[cfg(test)]
@@ -293,17 +292,7 @@ pub struct LockedHeapWithRescue<const ORDER: usize> {
 #[cfg(feature = "use_spin")]
 impl<const ORDER: usize> LockedHeapWithRescue<ORDER> {
     /// Creates an empty heap
-    #[cfg(feature = "const_fn")]
     pub const fn new(rescue: fn(&mut Heap<ORDER>, &Layout)) -> Self {
-        LockedHeapWithRescue {
-            inner: Mutex::new(Heap::<ORDER>::new()),
-            rescue,
-        }
-    }
-
-    /// Creates an empty heap
-    #[cfg(not(feature = "const_fn"))]
-    pub fn new(rescue: fn(&mut Heap<ORDER>, &Layout)) -> Self {
         LockedHeapWithRescue {
             inner: Mutex::new(Heap::<ORDER>::new()),
             rescue,

@@ -17,7 +17,6 @@ license = "MIT"
 [features]
 default = ["alloc", "use_spin"]
 alloc = []
-const_fn = []
 use_spin = ["spin"]
 
 [dependencies.spin]
