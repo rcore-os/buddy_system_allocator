@@ -1,7 +1,6 @@
 use super::prev_power_of_two;
 use alloc::collections::BTreeSet;
 use core::alloc::Layout;
-use core::array;
 use core::cmp::{max, min};
 use core::ops::Range;
 
@@ -41,9 +40,9 @@ pub struct FrameAllocator<const ORDER: usize = 32> {
 
 impl<const ORDER: usize> FrameAllocator<ORDER> {
     /// Create an empty frame allocator
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
-            free_list: array::from_fn(|_| BTreeSet::default()),
+            free_list: [const { BTreeSet::new() }; ORDER],
             allocated: 0,
             total: 0,
         }
