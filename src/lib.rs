@@ -88,10 +88,18 @@ impl<const ORDER: usize> Heap<ORDER> {
 
         while current_start + size_of::<usize>() <= end {
             let lowbit = current_start & (!current_start + 1);
-            let size = min(lowbit, prev_power_of_two(end - current_start));
+            let mut size = min(lowbit, prev_power_of_two(end - current_start));
+            
+            // If the order of size is larger than the max order,
+            // split it into smaller blocks.
+            let mut order = size.trailing_zeros() as usize;
+            if order > ORDER - 1 {
+                order = ORDER - 1;
+                size = 1 << order;
+            }
             total += size;
 
-            self.free_list[size.trailing_zeros() as usize].push(current_start as *mut usize);
+            self.free_list[order].push(current_start as *mut usize);
             current_start += size;
         }
 
