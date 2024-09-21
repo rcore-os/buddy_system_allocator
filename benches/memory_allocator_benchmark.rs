@@ -138,7 +138,7 @@ pub fn thread_test() {
     }
 }
 
-const ORDER: usize = 32;
+const ORDER: usize = 33;
 const MACHINE_ALIGN: usize = core::mem::size_of::<usize>();
 /// for now 128M is needed
 /// TODO: reduce memory use
