@@ -69,7 +69,7 @@ fn test_heap_add_large() {
     // 512 bytes of space
     let space: [u8; 512] = [0; 512];
     unsafe {
-        heap.add_to_heap(space.as_ptr() as usize, space.as_ptr().add(100) as usize);
+        heap.add_to_heap(space.as_ptr() as usize, space.as_ptr().add(512) as usize);
     }
     let addr = heap.alloc(Layout::from_size_align(1, 1).unwrap());
     assert!(addr.is_ok());
