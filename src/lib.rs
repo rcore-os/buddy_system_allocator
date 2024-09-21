@@ -39,7 +39,10 @@ pub use frame::*;
 /// ```
 /// use buddy_system_allocator::*;
 /// # use core::mem::size_of;
-/// let mut heap = Heap::<32>::empty();
+/// // The max order of the buddy system is `ORDER - 1`.
+/// // For example, to create a heap with a maximum block size of 2^32 bytes,
+/// // you should define the heap with `ORDER = 33`.
+/// let mut heap = Heap::<33>::empty();
 /// # let space: [usize; 100] = [0; 100];
 /// # let begin: usize = space.as_ptr() as usize;
 /// # let end: usize = begin + 100 * size_of::<usize>();
@@ -51,7 +54,7 @@ pub use frame::*;
 /// }
 /// ```
 pub struct Heap<const ORDER: usize> {
-    // buddy system with max order of `ORDER`
+    // buddy system with max order of `ORDER - 1`
     free_list: [linked_list::LinkedList; ORDER],
 
     // statistics
@@ -229,7 +232,10 @@ impl<const ORDER: usize> fmt::Debug for Heap<ORDER> {
 /// ```
 /// use buddy_system_allocator::*;
 /// # use core::mem::size_of;
-/// let mut heap = LockedHeap::<32>::new();
+/// // The max order of the buddy system is `ORDER - 1`.
+/// // For example, to create a heap with a maximum block size of 2^32 bytes,
+/// // you should define the heap with `ORDER = 33`.
+/// let mut heap = LockedHeap::<33>::new();
 /// # let space: [usize; 100] = [0; 100];
 /// # let begin: usize = space.as_ptr() as usize;
 /// # let end: usize = begin + 100 * size_of::<usize>();
@@ -287,7 +293,7 @@ unsafe impl<const ORDER: usize> GlobalAlloc for LockedHeap<ORDER> {
 /// Create a locked heap:
 /// ```
 /// use buddy_system_allocator::*;
-/// let heap = LockedHeapWithRescue::new(|heap: &mut Heap<32>, layout: &core::alloc::Layout| {});
+/// let heap = LockedHeapWithRescue::new(|heap: &mut Heap<33>, layout: &core::alloc::Layout| {});
 /// ```
 ///
 /// Before oom, the allocator will try to call rescue function and try for one more time.
