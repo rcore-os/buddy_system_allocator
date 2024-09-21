@@ -61,6 +61,21 @@ fn test_heap_add() {
 }
 
 #[test]
+fn test_heap_add_large() {
+    // Max size of block is 2^7 == 128 bytes
+    let mut heap = Heap::<8>::new();
+    assert!(heap.alloc(Layout::from_size_align(1, 1).unwrap()).is_err());
+
+    // 512 bytes of space
+    let space: [u8; 512] = [0; 512];
+    unsafe {
+        heap.add_to_heap(space.as_ptr() as usize, space.as_ptr().add(100) as usize);
+    }
+    let addr = heap.alloc(Layout::from_size_align(1, 1).unwrap());
+    assert!(addr.is_ok());
+}
+
+#[test]
 fn test_heap_oom() {
     let mut heap = Heap::<32>::new();
     let space: [usize; 100] = [0; 100];
