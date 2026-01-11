@@ -18,13 +18,13 @@ license = "MIT"
 default = ["alloc", "use_spin"]
 alloc = []
 soft_atomic_spin = ["spin/portable-atomic"]
-use_spin = ["spin"]
+use_spin = ["spin/spin_mutex"]
 
 [dependencies.spin]
 version = "0.10.0"
 optional = true
 default-features = false
-features = ["spin_mutex"]
+features = []
 
 [dev-dependencies]
 criterion = "0.6.0"
