@@ -11,7 +11,7 @@ use std::time::Duration;
 use alloc::alloc::GlobalAlloc;
 use alloc::alloc::Layout;
 use buddy_system_allocator::LockedHeap;
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use rand::{Rng, SeedableRng};
 
 const SMALL_SIZE: usize = 8;

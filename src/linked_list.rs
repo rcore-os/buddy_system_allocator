@@ -37,7 +37,9 @@ impl LinkedList {
     /// The caller must ensure that the pointed value can be used to store the next pointer for
     /// this intrusive linked list, and remains valid for as long as it is contained in the list.
     pub unsafe fn push(&mut self, item: *mut usize) {
-        *item = self.head as usize;
+        unsafe {
+            *item = self.head as usize;
+        }
         self.head = item;
     }
 
@@ -55,7 +57,7 @@ impl LinkedList {
     }
 
     /// Return an iterator over the items in the list
-    pub fn iter(&self) -> Iter {
+    pub fn iter(&self) -> Iter<'_> {
         Iter {
             curr: self.head,
             list: PhantomData,
@@ -63,7 +65,7 @@ impl LinkedList {
     }
 
     /// Return an mutable iterator over the items in the list
-    pub fn iter_mut(&mut self) -> IterMut {
+    pub fn iter_mut(&mut self) -> IterMut<'_> {
         IterMut {
             prev: &mut self.head as *mut *mut usize as *mut usize,
             curr: self.head,

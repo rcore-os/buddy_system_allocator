@@ -1,7 +1,7 @@
-use crate::linked_list;
 use crate::FrameAllocator;
 use crate::Heap;
 use crate::LockedHeapWithRescue;
+use crate::linked_list;
 use core::alloc::GlobalAlloc;
 use core::alloc::Layout;
 use core::mem::size_of;
@@ -83,9 +83,10 @@ fn test_heap_oom() {
         heap.add_to_heap(space.as_ptr() as usize, space.as_ptr().add(100) as usize);
     }
 
-    assert!(heap
-        .alloc(Layout::from_size_align(100 * size_of::<usize>(), 1).unwrap())
-        .is_err());
+    assert!(
+        heap.alloc(Layout::from_size_align(100 * size_of::<usize>(), 1).unwrap())
+            .is_err()
+    );
     assert!(heap.alloc(Layout::from_size_align(1, 1).unwrap()).is_ok());
 }
 
