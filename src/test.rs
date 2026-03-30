@@ -266,3 +266,73 @@ fn test_heap_merge_final_order() {
         heap.dealloc(alloc, layout);
     }
 }
+
+#[test]
+fn test_frame_allocator_alloc_at_basic() {
+    let mut frame = FrameAllocator::<32>::new();
+    frame.add_frame(0, 4);
+    assert_eq!(frame.alloc_at(0, 4), Some(0));
+    assert!(frame.alloc(1).is_none());
+}
+
+#[test]
+fn test_frame_allocator_alloc_at_split() {
+    let mut frame = FrameAllocator::<32>::new();
+    frame.add_frame(0, 8);
+    // Alloc 2 frames at address 2 (requires splitting the order-3 block)
+    assert_eq!(frame.alloc_at(2, 2), Some(2));
+    // Remaining: [0..2) at order 1, [4..8) at order 2
+    assert_eq!(frame.alloc(2), Some(0));
+    assert_eq!(frame.alloc(4), Some(4));
+    assert!(frame.alloc(1).is_none());
+}
+
+#[test]
+fn test_frame_allocator_alloc_at_unavailable() {
+    let mut frame = FrameAllocator::<32>::new();
+    frame.add_frame(0, 8);
+    assert_eq!(frame.alloc(4), Some(0));
+    // [0..4) is allocated, try to alloc_at within it
+    assert_eq!(frame.alloc_at(0, 2), None);
+    assert_eq!(frame.alloc_at(2, 2), None);
+}
+
+#[test]
+fn test_frame_allocator_alloc_at_misaligned() {
+    let mut frame = FrameAllocator::<32>::new();
+    frame.add_frame(0, 16);
+    // 4 frames at address 3: not aligned to 4
+    assert_eq!(frame.alloc_at(3, 4), None);
+    // 2 frames at address 1: not aligned to 2
+    assert_eq!(frame.alloc_at(1, 2), None);
+    // 1 frame at address 1: aligned to 1, should work
+    assert_eq!(frame.alloc_at(1, 1), Some(1));
+}
+
+#[test]
+fn test_frame_allocator_alloc_at_then_dealloc() {
+    let mut frame = FrameAllocator::<32>::new();
+    frame.add_frame(0, 16);
+    assert_eq!(frame.alloc_at(4, 4), Some(4));
+    frame.dealloc(4, 4);
+    // Buddies should merge back; full 16-frame alloc should succeed
+    assert_eq!(frame.alloc(16), Some(0));
+}
+
+#[test]
+fn test_frame_allocator_alloc_at_outside_range() {
+    let mut frame = FrameAllocator::<32>::new();
+    frame.add_frame(0, 8);
+    assert_eq!(frame.alloc_at(16, 2), None);
+}
+
+#[test]
+fn test_frame_allocator_alloc_at_multiple() {
+    let mut frame = FrameAllocator::<32>::new();
+    frame.add_frame(0, 16);
+    assert_eq!(frame.alloc_at(0, 4), Some(0));
+    assert_eq!(frame.alloc_at(4, 4), Some(4));
+    assert_eq!(frame.alloc_at(8, 4), Some(8));
+    assert_eq!(frame.alloc_at(12, 4), Some(12));
+    assert!(frame.alloc(1).is_none());
+}

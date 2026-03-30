@@ -97,6 +97,18 @@ impl<const ORDER: usize> FrameAllocator<ORDER> {
         self.alloc_power_of_two(size)
     }
 
+    /// Try to allocate a specific range of frames `[start, start + count)` from the allocator.
+    ///
+    /// The `count` will be rounded up to the next power of two, same as [`alloc`]. The `start`
+    /// address must be aligned to this rounded-up size (buddy system invariant).
+    ///
+    /// Returns `Some(start)` if the range was successfully allocated, or `None` if the range is
+    /// unavailable (not managed, already allocated, or misaligned).
+    pub fn alloc_at(&mut self, start: usize, count: usize) -> Option<usize> {
+        let size = count.next_power_of_two();
+        self.alloc_at_power_of_two(start, size)
+    }
+
     /// Allocate a range of frames of the given size from the allocator. The size must be a power of
     /// two. The allocated range will have alignment equal to the size.
     fn alloc_power_of_two(&mut self, size: usize) -> Option<usize> {
@@ -127,6 +139,36 @@ impl<const ORDER: usize> FrameAllocator<ORDER> {
                 }
             }
         }
+        None
+    }
+
+    /// Allocate a specific range of frames at the given start address with the given power-of-two
+    /// size. The start address must be aligned to the size.
+    fn alloc_at_power_of_two(&mut self, start: usize, size: usize) -> Option<usize> {
+        let class = size.trailing_zeros() as usize;
+
+        if start & (size - 1) != 0 {
+            return None;
+        }
+
+        for i in class..self.free_list.len() {
+            let block_start = start & !((1 << i) - 1);
+            if self.free_list[i].remove(&block_start) {
+                let mut current_start = block_start;
+                for j in (class..i).rev() {
+                    let mid = current_start + (1 << j);
+                    if start >= mid {
+                        self.free_list[j].insert(current_start);
+                        current_start = mid;
+                    } else {
+                        self.free_list[j].insert(mid);
+                    }
+                }
+                self.allocated += size;
+                return Some(start);
+            }
+        }
+
         None
     }
 
