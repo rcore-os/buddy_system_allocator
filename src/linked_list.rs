@@ -55,7 +55,7 @@ impl LinkedList {
     }
 
     /// Return an iterator over the items in the list
-    pub fn iter(&self) -> Iter {
+    pub fn iter(&self) -> Iter<'_> {
         Iter {
             curr: self.head,
             list: PhantomData,
@@ -63,7 +63,7 @@ impl LinkedList {
     }
 
     /// Return an mutable iterator over the items in the list
-    pub fn iter_mut(&mut self) -> IterMut {
+    pub fn iter_mut(&mut self) -> IterMut<'_> {
         IterMut {
             prev: &mut self.head as *mut *mut usize as *mut usize,
             curr: self.head,
