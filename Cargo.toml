@@ -20,14 +20,14 @@ alloc = []
 use_spin = ["spin"]
 
 [dependencies.spin]
-version = "0.10.0"
+version = "0.12.1"
 optional = true
 default-features = false
 features = ["spin_mutex"]
 
 [dev-dependencies]
 criterion = "0.8.1"
-ctor = "0.8.0"
+ctor = "1.0.7"
 rand = "0.10.0"
 rand_chacha = "0.10.0"
 
