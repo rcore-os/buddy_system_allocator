@@ -34,3 +34,7 @@ rand_chacha = "0.10.0"
 [[bench]]
 name = "memory_allocator_benchmark"
 harness = false
+
+[[bench]]
+name = "heap_dealloc_scan"
+harness = false
