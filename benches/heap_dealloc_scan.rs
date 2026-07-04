@@ -43,7 +43,7 @@ const HEAP_WORDS: usize = HEAP_BYTES / core::mem::size_of::<usize>();
 const BLOCK_SIZE: usize = 64;
 
 /// Degradation curve — number of buddy *pairs* to measure at each point.
-const PAIR_SIZES: &[usize] = &[100, 500, 1000, 2000, 5000, 10000];
+const PAIR_SIZES: &[usize] = &[100, 500, 1000, 2000, 5000];
 
 // ---------------------------------------------------------------------------
 // State
