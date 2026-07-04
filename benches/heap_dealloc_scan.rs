@@ -5,7 +5,7 @@
 //! their lower-half buddies.  Each dealloc must linearly scan the free list to
 //! find its buddy — exposing the O(N) scan path in the intrusive linked list.
 //!
-//! Multiple sizes are benchmarked (100, 500, 1000, 2000, 5000, 10000 pairs)
+//! Multiple sizes are benchmarked (100, 500, 1000, 2000, 5000 pairs)
 //! so the quadratic degradation is visible in the Criterion report.
 //!
 //! # Strategy
