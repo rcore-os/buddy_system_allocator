@@ -11,8 +11,8 @@ use std::time::Duration;
 use alloc::alloc::GlobalAlloc;
 use alloc::alloc::Layout;
 use buddy_system_allocator::LockedHeap;
-use criterion::{Criterion, black_box, criterion_group, criterion_main};
-use rand::{Rng, SeedableRng};
+use criterion::{Criterion, criterion_group, criterion_main};
+use rand::{RngExt, SeedableRng};
 
 const SMALL_SIZE: usize = 8;
 const LARGE_SIZE: usize = 1024 * 1024; // 1M
@@ -40,7 +40,7 @@ pub fn large_alloc<const ORDER: usize>(heap: &LockedHeap<ORDER>) {
 
 /// Multithreads alloc random sizes of object
 #[inline]
-pub fn mutil_thread_random_size<const ORDER: usize>(heap: &'static LockedHeap<ORDER>) {
+pub fn multi_thread_random_size<const ORDER: usize>(heap: &'static LockedHeap<ORDER>) {
     const THREAD_SIZE: usize = 10;
 
     let mut threads = Vec::with_capacity(THREAD_SIZE);
@@ -53,7 +53,7 @@ pub fn mutil_thread_random_size<const ORDER: usize>(heap: &'static LockedHeap<OR
             let mut rng = rand_chacha::ChaCha8Rng::seed_from_u64(i as u64);
             // generate a random object size in range of [SMALL_SIZE ..= LARGE_SIZE]
             let layout = unsafe {
-                Layout::from_size_align_unchecked(rng.gen_range(SMALL_SIZE..=LARGE_SIZE), ALIGN)
+                Layout::from_size_align_unchecked(rng.random_range(SMALL_SIZE..=LARGE_SIZE), ALIGN)
             };
             let addr = unsafe { prethread_alloc.alloc(layout) };
 
@@ -160,9 +160,9 @@ static HEAP_ALLOCATOR: LockedHeap<ORDER> = LockedHeap::<ORDER>::new();
 ///
 /// So the solution in this dilemma is to run `fn init_heap()` in initialization phase
 /// rather than in `fn main()`. We need `ctor` to do this.
-#[ctor]
+#[ctor(unsafe)]
 fn init_heap() {
-    let heap_start = unsafe { HEAP.as_ptr() as usize };
+    let heap_start = core::ptr::addr_of!(HEAP) as usize;
     unsafe {
         HEAP_ALLOCATOR
             .lock()
@@ -174,13 +174,13 @@ fn init_heap() {
 pub fn criterion_benchmark(c: &mut Criterion) {
     // run benchmark
     c.bench_function("small alloc", |b| {
-        b.iter(|| small_alloc(black_box(&HEAP_ALLOCATOR)))
+        b.iter(|| small_alloc(std::hint::black_box(&HEAP_ALLOCATOR)))
     });
     c.bench_function("large alloc", |b| {
-        b.iter(|| large_alloc(black_box(&HEAP_ALLOCATOR)))
+        b.iter(|| large_alloc(std::hint::black_box(&HEAP_ALLOCATOR)))
     });
-    c.bench_function("mutil thread random size", |b| {
-        b.iter(|| mutil_thread_random_size(black_box(&HEAP_ALLOCATOR)))
+    c.bench_function("multi thread random size", |b| {
+        b.iter(|| multi_thread_random_size(std::hint::black_box(&HEAP_ALLOCATOR)))
     });
     c.bench_function("threadtest", |b| b.iter(thread_test));
 }
