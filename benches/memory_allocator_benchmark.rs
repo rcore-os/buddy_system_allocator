@@ -40,7 +40,7 @@ pub fn large_alloc<const ORDER: usize>(heap: &LockedHeap<ORDER>) {
 
 /// Multithreads alloc random sizes of object
 #[inline]
-pub fn mutil_thread_random_size<const ORDER: usize>(heap: &'static LockedHeap<ORDER>) {
+pub fn multi_thread_random_size<const ORDER: usize>(heap: &'static LockedHeap<ORDER>) {
     const THREAD_SIZE: usize = 10;
 
     let mut threads = Vec::with_capacity(THREAD_SIZE);
@@ -179,8 +179,8 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("large alloc", |b| {
         b.iter(|| large_alloc(std::hint::black_box(&HEAP_ALLOCATOR)))
     });
-    c.bench_function("mutil thread random size", |b| {
-        b.iter(|| mutil_thread_random_size(std::hint::black_box(&HEAP_ALLOCATOR)))
+    c.bench_function("multi thread random size", |b| {
+        b.iter(|| multi_thread_random_size(std::hint::black_box(&HEAP_ALLOCATOR)))
     });
     c.bench_function("threadtest", |b| b.iter(thread_test));
 }
